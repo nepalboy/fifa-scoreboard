@@ -15,15 +15,15 @@ const DEFAULT_SETTINGS = {
     }
 };
 
-// Default Mock Database State
+// Default Mock Database State (Prepopulated with admin and default players)
 const INITIAL_MOCK_STATE = {
     settings: DEFAULT_SETTINGS,
     players: [
-        { id: 'mock-admin', name: 'FIFA Admin', email: 'admin@fifa.com', photoURL: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&h=100&q=80', role: 'admin', points: 0 },
-        { id: 'mock-player-1', name: 'Marcus Rashford', email: 'marcus@fifa.com', photoURL: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=100&h=100&q=80', role: 'player', points: 40 },
-        { id: 'mock-player-2', name: 'Bukayo Saka', email: 'bukayo@fifa.com', photoURL: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&h=100&q=80', role: 'player', points: 30 }
+        { id: 'mock-admin', name: 'FIFA Admin', email: 'admin@fifa.com', password: 'admin123', photoURL: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&h=100&q=80', role: 'admin', points: 0 },
+        { id: 'mock-player-1', name: 'Marcus Rashford', email: 'marcus@fifa.com', password: 'player123', photoURL: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=100&h=100&q=80', role: 'player', points: 40 },
+        { id: 'mock-player-2', name: 'Bukayo Saka', email: 'bukayo@fifa.com', password: 'player123', photoURL: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&h=100&q=80', role: 'player', points: 30 }
     ],
-    matches: [] // Will be generated in app.js
+    matches: []
 };
 
 // Check if Firebase config is saved in localStorage
@@ -55,7 +55,6 @@ const firebaseConfig = getSavedFirebaseConfig();
 
 if (firebaseConfig) {
     try {
-        // Dynamic imports of Firebase libraries from official CDN
         const { initializeApp: initApp } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js');
         const { getAuth: initAuth } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js');
         const { getFirestore: initFirestore } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js');
@@ -66,7 +65,7 @@ if (firebaseConfig) {
         firebaseEnabled = true;
         console.log("Firebase initialized successfully.");
     } catch (e) {
-        console.error("Failed to initialize Firebase with provided config. Falling back to Mock Mode.", e);
+        console.error("Failed to initialize Firebase. Falling back to Mock Mode.", e);
     }
 }
 
@@ -77,7 +76,16 @@ function getMockDB() {
         localStorage.setItem(MOCK_DB_KEY, JSON.stringify(INITIAL_MOCK_STATE));
         return INITIAL_MOCK_STATE;
     }
-    return JSON.parse(mockData);
+    // Backward compatibility: ensure password field exists
+    const parsed = JSON.parse(mockData);
+    let updated = false;
+    parsed.players.forEach(p => {
+        if (p.id === 'mock-admin' && !p.password) { p.password = 'admin123'; updated = true; }
+        if (p.id === 'mock-player-1' && !p.password) { p.password = 'player123'; updated = true; }
+        if (p.id === 'mock-player-2' && !p.password) { p.password = 'player123'; updated = true; }
+    });
+    if (updated) saveMockDB(parsed);
+    return parsed;
 }
 
 // Helper: save mock database state
@@ -97,20 +105,18 @@ export function isFirebaseEnabled() {
     return firebaseEnabled;
 }
 
-// Auth API
+// Auth API - Google Login
 export async function loginWithGoogle() {
     if (firebaseEnabled) {
         const { GoogleAuthProvider: AuthProvider, signInWithPopup: popupSignIn } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js');
         const provider = new AuthProvider();
         const result = await popupSignIn(auth, provider);
         
-        // Sync or create user document in Firestore
         const user = result.user;
         const playerRef = doc(db, 'players', user.uid);
         const playerSnap = await getDoc(playerRef);
         
         if (!playerSnap.exists()) {
-            // Check if they should be admin (e.g. first user is admin)
             const playersColl = collection(db, 'players');
             const playersSnap = await getDocs(playersColl);
             const isFirstUser = playersSnap.empty;
@@ -129,9 +135,103 @@ export async function loginWithGoogle() {
             return playerSnap.data();
         }
     } else {
-        // In mock mode, we trigger mock login modal or default to player 1
-        console.warn("Google Sign-In is simulating in Mock Mode. Set up Firebase for real OAuth.");
+        console.warn("Google Sign-In is simulating in Mock Mode.");
         return simulateMockLogin('mock-player-1');
+    }
+}
+
+// Auth API - Email/Password Login
+export async function loginWithEmail(email, password) {
+    if (firebaseEnabled) {
+        const { signInWithEmailAndPassword } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js');
+        const { doc: fsDoc, getDoc: fsGetDoc } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js');
+        
+        const result = await signInWithEmailAndPassword(auth, email, password);
+        const user = result.user;
+        
+        const playerRef = fsDoc(db, 'players', user.uid);
+        const playerSnap = await fsGetDoc(playerRef);
+        if (playerSnap.exists()) {
+            return playerSnap.data();
+        } else {
+            return {
+                id: user.uid,
+                name: user.displayName || email.split('@')[0],
+                email: email,
+                photoURL: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&h=100&q=80',
+                role: 'player',
+                points: 0
+            };
+        }
+    } else {
+        const mockDb = getMockDB();
+        const user = mockDb.players.find(p => p.email.toLowerCase() === email.toLowerCase() && p.password === password);
+        if (user) {
+            currentMockUser = user;
+            localStorage.setItem('fifa_current_mock_user', JSON.stringify(user));
+            notifyMockAuthSubscribers();
+            return user;
+        } else {
+            throw new Error("Invalid email or password.");
+        }
+    }
+}
+
+// Auth API - Email/Password Registration
+export async function registerWithEmail(name, email, password) {
+    if (firebaseEnabled) {
+        const { createUserWithEmailAndPassword, updateProfile } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js');
+        const { doc: fsDoc, setDoc: fsSetDoc, collection: fsColl, getDocs: fsGetDocs } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js');
+        
+        const result = await createUserWithEmailAndPassword(auth, email, password);
+        const user = result.user;
+        
+        await updateProfile(user, { displayName: name });
+        
+        // Determine role (first user or admin@fifa.com gets admin)
+        const playersColl = fsColl(db, 'players');
+        const playersSnap = await fsGetDocs(playersColl);
+        const isFirstUser = playersSnap.empty;
+        const role = (isFirstUser || email.toLowerCase() === 'admin@fifa.com') ? 'admin' : 'player';
+        
+        const newPlayerData = {
+            id: user.uid,
+            name: name,
+            email: email,
+            photoURL: `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(name)}`,
+            role: role,
+            points: 0
+        };
+        
+        await fsSetDoc(fsDoc(db, 'players', user.uid), newPlayerData);
+        return newPlayerData;
+    } else {
+        const mockDb = getMockDB();
+        const existingUser = mockDb.players.find(p => p.email.toLowerCase() === email.toLowerCase());
+        if (existingUser) {
+            throw new Error("Email is already registered.");
+        }
+        
+        // Admin assignment rule for mock
+        const role = (email.toLowerCase() === 'admin@fifa.com') ? 'admin' : 'player';
+        
+        const newUser = {
+            id: 'mock-' + Math.random().toString(36).substr(2, 9),
+            name: name,
+            email: email,
+            password: password,
+            photoURL: `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(name)}`,
+            role: role,
+            points: 0
+        };
+        
+        mockDb.players.push(newUser);
+        saveMockDB(mockDb);
+        
+        currentMockUser = newUser;
+        localStorage.setItem('fifa_current_mock_user', JSON.stringify(newUser));
+        notifyMockAuthSubscribers();
+        return newUser;
     }
 }
 
@@ -154,6 +254,7 @@ export function simulateMockRegister(name, role = 'player') {
         id: id,
         name: name,
         email: name.toLowerCase().replace(/\s+/g, '') + '@fifa.com',
+        password: 'player123',
         photoURL: `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(name)}`,
         role: role,
         points: 0
@@ -183,7 +284,6 @@ export function subscribeToAuth(callback) {
         const { onAuthStateChanged: firebaseAuthListener } = import('https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js');
         auth.onAuthStateChanged(async (user) => {
             if (user) {
-                // Fetch user data from firestore
                 const { doc: fsDoc, getDoc: fsGetDoc } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js');
                 const playerRef = fsDoc(db, 'players', user.uid);
                 const playerSnap = await fsGetDoc(playerRef);
@@ -205,12 +305,10 @@ export function subscribeToAuth(callback) {
         });
     } else {
         mockAuthListeners.push(callback);
-        // Load initial mock user from storage if active
         const savedMockUser = localStorage.getItem('fifa_current_mock_user');
         if (savedMockUser) {
             currentMockUser = JSON.parse(savedMockUser);
         }
-        // Emit current user initially
         setTimeout(() => callback(currentMockUser), 50);
     }
 }
@@ -228,7 +326,6 @@ export async function getSettings() {
         if (settingsSnap.exists()) {
             return settingsSnap.data();
         } else {
-            // Seed defaults
             await fsSetDoc(settingsRef, DEFAULT_SETTINGS);
             return DEFAULT_SETTINGS;
         }
@@ -319,7 +416,6 @@ export async function resetTournament(matches, playersReset = false) {
     if (firebaseEnabled) {
         const { writeBatch: fsWriteBatch, doc: fsDoc, collection: fsColl, getDocs: fsGetDocs } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js');
         
-        // Batch delete old matches
         const matchesColl = fsColl(db, 'matches');
         const snap = await fsGetDocs(matchesColl);
         let batch = fsWriteBatch(db);
@@ -328,7 +424,6 @@ export async function resetTournament(matches, playersReset = false) {
         });
         await batch.commit();
 
-        // Write new matches
         batch = fsWriteBatch(db);
         matches.forEach(match => {
             const matchRef = fsDoc(db, 'matches', String(match.id));
