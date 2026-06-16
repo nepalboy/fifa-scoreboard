@@ -15,13 +15,12 @@ const DEFAULT_SETTINGS = {
     }
 };
 
-// Default Mock Database State (Prepopulated with admin and default players)
+// Default Mock Database State (Only Admin and Test accounts as requested)
 const INITIAL_MOCK_STATE = {
     settings: DEFAULT_SETTINGS,
     players: [
-        { id: 'mock-admin', name: 'FIFA Admin', email: 'admin@fifa.com', password: 'admin123', photoURL: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&h=100&q=80', role: 'admin', points: 0 },
-        { id: 'mock-player-1', name: 'Marcus Rashford', email: 'marcus@fifa.com', password: 'player123', photoURL: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=100&h=100&q=80', role: 'player', points: 40 },
-        { id: 'mock-player-2', name: 'Bukayo Saka', email: 'bukayo@fifa.com', password: 'player123', photoURL: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&h=100&q=80', role: 'player', points: 30 }
+        { id: 'admin', name: 'FIFA Admin', email: 'admin@fifa.com', password: 'admin123', photoURL: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Admin', role: 'admin', points: 0 },
+        { id: 'test', name: 'Test Player', email: 'test@fifa.com', password: 'test123', photoURL: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Test', role: 'player', points: 0 }
     ],
     matches: []
 };
@@ -76,15 +75,31 @@ function getMockDB() {
         localStorage.setItem(MOCK_DB_KEY, JSON.stringify(INITIAL_MOCK_STATE));
         return INITIAL_MOCK_STATE;
     }
-    // Backward compatibility: ensure password field exists
     const parsed = JSON.parse(mockData);
-    let updated = false;
-    parsed.players.forEach(p => {
-        if (p.id === 'mock-admin' && !p.password) { p.password = 'admin123'; updated = true; }
-        if (p.id === 'mock-player-1' && !p.password) { p.password = 'player123'; updated = true; }
-        if (p.id === 'mock-player-2' && !p.password) { p.password = 'player123'; updated = true; }
-    });
-    if (updated) saveMockDB(parsed);
+    
+    // Ensure only Admin and Test accounts remain for deployment
+    let playersUpdated = false;
+    
+    // Check if we have excess mock accounts (e.g. Rashford, Saka)
+    const hasRashford = parsed.players.some(p => p.id === 'mock-player-1');
+    const hasSaka = parsed.players.some(p => p.id === 'mock-player-2');
+    
+    if (hasRashford || hasSaka || parsed.players.length > 20) {
+        parsed.players = [
+            { id: 'admin', name: 'FIFA Admin', email: 'admin@fifa.com', password: 'admin123', photoURL: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Admin', role: 'admin', points: 0 },
+            { id: 'test', name: 'Test Player', email: 'test@fifa.com', password: 'test123', photoURL: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Test', role: 'player', points: 0 }
+        ];
+        playersUpdated = true;
+    }
+    
+    // Ensure admin password is admin123
+    const adminUser = parsed.players.find(p => p.id === 'admin');
+    if (adminUser && adminUser.password !== 'admin123') {
+        adminUser.password = 'admin123';
+        playersUpdated = true;
+    }
+    
+    if (playersUpdated) saveMockDB(parsed);
     return parsed;
 }
 
@@ -126,7 +141,7 @@ export async function loginWithGoogle() {
                 name: user.displayName || user.email.split('@')[0],
                 email: user.email,
                 photoURL: user.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&h=100&q=80',
-                role: isFirstUser ? 'admin' : 'player',
+                role: (isFirstUser || user.email.toLowerCase() === 'admin@fifa.com') ? 'admin' : 'player',
                 points: 0
             };
             await setDoc(playerRef, newPlayerData);
@@ -136,15 +151,23 @@ export async function loginWithGoogle() {
         }
     } else {
         console.warn("Google Sign-In is simulating in Mock Mode.");
-        return simulateMockLogin('mock-player-1');
+        return simulateMockLogin('test');
     }
 }
 
-// Auth API - Email/Password Login
-export async function loginWithEmail(email, password) {
+// Auth API - Email/Password Login (Supports username or email)
+export async function loginWithEmail(usernameOrEmail, password) {
     if (firebaseEnabled) {
         const { signInWithEmailAndPassword } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js');
         const { doc: fsDoc, getDoc: fsGetDoc } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js');
+        
+        // If they type "admin" but Firebase needs email, map it to admin@fifa.com
+        let email = usernameOrEmail;
+        if (usernameOrEmail.toLowerCase() === 'admin') {
+            email = 'admin@fifa.com';
+        } else if (usernameOrEmail.toLowerCase() === 'test') {
+            email = 'test@fifa.com';
+        }
         
         const result = await signInWithEmailAndPassword(auth, email, password);
         const user = result.user;
@@ -165,20 +188,28 @@ export async function loginWithEmail(email, password) {
         }
     } else {
         const mockDb = getMockDB();
-        const user = mockDb.players.find(p => p.email.toLowerCase() === email.toLowerCase() && p.password === password);
+        // Support searching by email or username (id)
+        const user = mockDb.players.find(p => 
+            (p.email.toLowerCase() === usernameOrEmail.toLowerCase() || p.id.toLowerCase() === usernameOrEmail.toLowerCase()) && 
+            p.password === password
+        );
         if (user) {
             currentMockUser = user;
             localStorage.setItem('fifa_current_mock_user', JSON.stringify(user));
             notifyMockAuthSubscribers();
             return user;
         } else {
-            throw new Error("Invalid email or password.");
+            throw new Error("Invalid username or password.");
         }
     }
 }
 
 // Auth API - Email/Password Registration
-export async function registerWithEmail(name, email, password) {
+export async function registerWithEmail(name, usernameOrEmail, password) {
+    const isEmail = usernameOrEmail.includes('@');
+    const email = isEmail ? usernameOrEmail : `${usernameOrEmail.toLowerCase().replace(/\s+/g, '')}@fifa.com`;
+    const id = isEmail ? usernameOrEmail.split('@')[0] : usernameOrEmail.toLowerCase().replace(/\s+/g, '');
+
     if (firebaseEnabled) {
         const { createUserWithEmailAndPassword, updateProfile } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js');
         const { doc: fsDoc, setDoc: fsSetDoc, collection: fsColl, getDocs: fsGetDocs } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js');
@@ -188,11 +219,10 @@ export async function registerWithEmail(name, email, password) {
         
         await updateProfile(user, { displayName: name });
         
-        // Determine role (first user or admin@fifa.com gets admin)
         const playersColl = fsColl(db, 'players');
         const playersSnap = await fsGetDocs(playersColl);
         const isFirstUser = playersSnap.empty;
-        const role = (isFirstUser || email.toLowerCase() === 'admin@fifa.com') ? 'admin' : 'player';
+        const role = (isFirstUser || id === 'admin' || email.toLowerCase() === 'admin@fifa.com') ? 'admin' : 'player';
         
         const newPlayerData = {
             id: user.uid,
@@ -207,16 +237,17 @@ export async function registerWithEmail(name, email, password) {
         return newPlayerData;
     } else {
         const mockDb = getMockDB();
-        const existingUser = mockDb.players.find(p => p.email.toLowerCase() === email.toLowerCase());
+        const existingUser = mockDb.players.find(p => 
+            p.email.toLowerCase() === email.toLowerCase() || p.id.toLowerCase() === id.toLowerCase()
+        );
         if (existingUser) {
-            throw new Error("Email is already registered.");
+            throw new Error("Username or Email is already registered.");
         }
         
-        // Admin assignment rule for mock
-        const role = (email.toLowerCase() === 'admin@fifa.com') ? 'admin' : 'player';
+        const role = (id === 'admin') ? 'admin' : 'player';
         
         const newUser = {
-            id: 'mock-' + Math.random().toString(36).substr(2, 9),
+            id: id,
             name: name,
             email: email,
             password: password,
@@ -249,11 +280,11 @@ export function simulateMockLogin(userId) {
 
 export function simulateMockRegister(name, role = 'player') {
     const mockDb = getMockDB();
-    const id = 'mock-' + Math.random().toString(36).substr(2, 9);
+    const id = name.toLowerCase().replace(/\s+/g, '');
     const newUser = {
         id: id,
         name: name,
-        email: name.toLowerCase().replace(/\s+/g, '') + '@fifa.com',
+        email: id + '@fifa.com',
         password: 'player123',
         photoURL: `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(name)}`,
         role: role,
