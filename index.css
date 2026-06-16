@@ -287,9 +287,9 @@ main {
 /* Landing Page Hero Container */
 .hero-container {
     display: grid;
-    grid-template-columns: 1.2fr 0.8fr;
-    gap: 2rem;
-    margin-bottom: 2.5rem;
+    grid-template-columns: 1.25fr 0.75fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
 }
 
 @media (max-width: 968px) {
@@ -298,9 +298,9 @@ main {
     }
 }
 
-/* FIFA Stadium Hero Card */
+/* Torrey Pines Beach Background Hero Card */
 .hero-card {
-    background: linear-gradient(135deg, rgba(8, 11, 16, 0.9) 30%, rgba(15, 19, 26, 0.7) 100%), url('assets/fifa_stadium_hero.png');
+    background: linear-gradient(to right, rgba(8, 11, 16, 0.85) 30%, rgba(15, 19, 26, 0.5) 100%), url('assets/torrey_pines_soccer.png');
     background-size: cover;
     background-position: center;
     border: 1px solid var(--border-color);
@@ -308,10 +308,11 @@ main {
     padding: 3rem;
     position: relative;
     overflow: hidden;
-    box-shadow: var(--shadow-lg), 0 0 20px rgba(0, 240, 255, 0.1);
+    box-shadow: var(--shadow-lg);
     display: flex;
     flex-direction: column;
     justify-content: center;
+    min-height: 280px;
 }
 
 .hero-title {
@@ -328,15 +329,15 @@ main {
     font-size: 1.1rem;
     color: var(--color-text-muted);
     max-width: 600px;
-    margin-bottom: 2rem;
+    margin-bottom: 0;
 }
 
-/* Immersive Auth Card */
+/* Compact Login / Auth Card */
 .auth-card {
     background: var(--bg-card);
     border: 1px solid var(--border-color);
     border-radius: 20px;
-    padding: 2.25rem;
+    padding: 1.25rem 1.5rem; /* Reduced padding from 2.25rem */
     box-shadow: var(--shadow-lg);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -352,30 +353,22 @@ main {
 }
 
 .auth-card-title {
-    font-size: 1.35rem;
+    font-size: 1.15rem; /* Reduced font size */
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.7px;
-    margin-bottom: 1.5rem;
+    margin-bottom: 0.75rem; /* Reduced margin */
     color: #fff;
     text-align: center;
-}
-
-.auth-card-subtitle {
-    font-size: 0.85rem;
-    color: var(--color-text-muted);
-    text-align: center;
-    margin-bottom: 1.5rem;
-    margin-top: -1rem;
 }
 
 .auth-tabs {
     display: grid;
     grid-template-columns: 1fr 1fr;
     background: rgba(0, 0, 0, 0.4);
-    padding: 0.25rem;
-    border-radius: 8px;
-    margin-bottom: 1.5rem;
+    padding: 0.2rem;
+    border-radius: 6px;
+    margin-bottom: 0.75rem; /* Reduced margin */
 }
 
 .auth-tab-btn {
@@ -383,11 +376,11 @@ main {
     border: none;
     color: var(--color-text-muted);
     font-family: var(--font-sans);
-    font-size: 0.85rem;
+    font-size: 0.8rem; /* Reduced size */
     font-weight: 700;
-    padding: 0.5rem;
+    padding: 0.35rem; /* Reduced padding */
     cursor: pointer;
-    border-radius: 6px;
+    border-radius: 4px;
     transition: var(--transition-fast);
 }
 
@@ -397,7 +390,7 @@ main {
 }
 
 .auth-form-group {
-    margin-bottom: 1.25rem;
+    margin-bottom: 0.75rem; /* Reduced margin from 1.25rem */
 }
 
 .auth-input-wrapper {
@@ -406,28 +399,29 @@ main {
 
 .auth-input-icon {
     position: absolute;
-    left: 1rem;
+    left: 0.75rem;
     top: 50%;
     transform: translateY(-50%);
     color: var(--color-text-muted);
+    font-size: 0.85rem;
 }
 
 .auth-input {
     width: 100%;
     background: rgba(0, 0, 0, 0.4);
     border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 0.75rem 1rem 0.75rem 2.5rem;
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem 0.5rem 2.25rem; /* Reduced height padding */
     color: #fff;
     font-family: var(--font-sans);
-    font-size: 0.95rem;
+    font-size: 0.85rem; /* Reduced size */
     transition: var(--transition-fast);
 }
 
 .auth-input:focus {
     outline: none;
     border-color: var(--color-primary);
-    box-shadow: 0 0 10px var(--color-primary-glow);
+    box-shadow: 0 0 8px var(--color-primary-glow);
 }
 
 .auth-divider {
@@ -435,8 +429,8 @@ main {
     align-items: center;
     text-align: center;
     color: var(--color-text-muted);
-    font-size: 0.75rem;
-    margin: 1.25rem 0;
+    font-size: 0.7rem;
+    margin: 0.75rem 0; /* Reduced margin from 1.25rem */
     text-transform: uppercase;
 }
 
@@ -447,11 +441,21 @@ main {
 }
 
 .auth-divider:not(:empty)::before {
-    margin-right: .75rem;
+    margin-right: .5rem;
 }
 
 .auth-divider:not(:empty)::after {
-    margin-left: .75rem;
+    margin-left: .5rem;
+}
+
+.btn-google {
+    background: white;
+    color: #333;
+    font-weight: 600;
+    border-color: #ddd;
+    width: 100%;
+    padding: 0.5rem 1rem; /* Compact padding */
+    font-size: 0.85rem;
 }
 
 /* User Logged In Portal Panel */
@@ -460,63 +464,57 @@ main {
     flex-direction: column;
     align-items: center;
     text-align: center;
+    padding: 0.5rem 0;
 }
 
 .auth-welcome-avatar {
-    width: 70px;
-    height: 70px;
+    width: 55px;
+    height: 55px;
     border-radius: 50%;
-    border: 3px solid var(--color-primary);
-    margin-bottom: 1rem;
-    box-shadow: var(--shadow-md);
+    border: 2px solid var(--color-primary);
+    margin-bottom: 0.5rem;
 }
 
 .auth-welcome-name {
-    font-size: 1.25rem;
+    font-size: 1.1rem;
     font-weight: 700;
     color: #fff;
 }
 
 .auth-welcome-role {
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     color: var(--color-primary);
     text-transform: uppercase;
     font-weight: 800;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
 }
 
+/* Stats Cards */
 .dashboard-stats {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 2.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 2rem;
 }
 
 .stat-card {
     background: var(--bg-card);
     border: 1px solid var(--border-color);
-    border-radius: 16px;
-    padding: 1.5rem;
+    border-radius: 14px;
+    padding: 1.25rem;
     display: flex;
     align-items: center;
-    gap: 1.25rem;
-    transition: var(--transition-normal);
-}
-
-.stat-card:hover {
-    transform: translateY(-3px);
-    border-color: var(--border-color-glow);
-    box-shadow: var(--shadow-glow);
+    gap: 1rem;
 }
 
 .stat-icon {
-    width: 50px;
-    height: 50px;
-    border-radius: 12px;
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     background: rgba(0, 240, 255, 0.1);
     color: var(--color-primary);
 }
@@ -537,15 +535,118 @@ main {
 }
 
 .stat-label {
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     color: var(--color-text-muted);
     text-transform: uppercase;
-    letter-spacing: 0.5px;
 }
 
 .stat-value {
-    font-size: 1.75rem;
+    font-size: 1.5rem;
     font-weight: 700;
+}
+
+/* Dashboard Split Grid (Your Standings vs Global Leaderboard Summary) */
+.dashboard-split-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+@media (max-width: 968px) {
+    .dashboard-split-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Dashboard Performance Card */
+.performance-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.performance-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding-bottom: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.performance-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.performance-body {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.perf-avatar-wrapper {
+    position: relative;
+}
+
+.perf-avatar {
+    width: 65px;
+    height: 65px;
+    border-radius: 50%;
+    border: 2px solid var(--color-primary);
+}
+
+.perf-badge {
+    position: absolute;
+    bottom: -5px;
+    right: -5px;
+    background: var(--color-secondary);
+    color: var(--color-text-dark);
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 10px;
+    text-transform: uppercase;
+}
+
+.perf-stats-rows {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+.perf-stat-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.perf-stat-label {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+}
+
+.perf-stat-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.perf-stat-value.primary {
+    color: var(--color-primary);
+}
+
+.perf-stat-value.gold {
+    color: var(--color-secondary);
 }
 
 /* Bracket Viewer Layout */
