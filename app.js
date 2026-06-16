@@ -161,7 +161,6 @@ async function loadData() {
         players = await getPlayers();
         matches = await getMatches();
         
-        // Seed matches if empty
         if (matches.length === 0) {
             await initializeNewBracket(false);
             matches = await getMatches();
@@ -175,7 +174,6 @@ async function loadData() {
 async function initializeNewBracket(resetScores = false) {
     const initialMatches = [];
     
-    // Level 1: Round of 64 (Matches 1-32)
     for (let i = 1; i <= 32; i++) {
         const teamAIndex = (i - 1) * 2;
         const teamBIndex = teamAIndex + 1;
@@ -186,13 +184,12 @@ async function initializeNewBracket(resetScores = false) {
             awayTeam: TEAMS_64[teamBIndex],
             homeScore: null,
             awayScore: null,
-            outcome: null, // 'home', 'away', 'tie', null
+            outcome: null,
             completed: false,
             reporterId: null
         });
     }
 
-    // Higher levels (Matches 33-63) populated empty
     for (let i = 33; i <= 63; i++) {
         initialMatches.push({
             id: i,
@@ -213,10 +210,8 @@ async function initializeNewBracket(resetScores = false) {
 
 // Recalculates all player points based on completed matches and current settings
 async function recalculatePlayerPoints() {
-    // Reset points in memory
     players.forEach(p => p.points = 0);
     
-    // Sum points from completed matches
     matches.forEach(m => {
         if (m.completed && m.reporterId) {
             const reporter = players.find(p => p.id === m.reporterId);
@@ -231,11 +226,10 @@ async function recalculatePlayerPoints() {
         }
     });
 
-    // Save recalculated scores back to the database
     for (const player of players) {
         await savePlayer(player);
     }
-    players = await getPlayers(); // Reload sorted list
+    players = await getPlayers(); 
 }
 
 // ----------------------------------------------------
@@ -254,7 +248,71 @@ function renderDashboard() {
     document.getElementById('stat-top-player').innerText = topPlayer ? topPlayer.name : 'None';
     document.getElementById('stat-top-score').innerText = topPlayer ? `${topPlayer.points} pts` : '0 pts';
 
-    // Show recent activity
+    // 1. RENDER INDIVIDUAL SCORES CARD (PERSONAL STANDINGS)
+    const perfAuthDiv = document.getElementById('dash-perf-authenticated');
+    const perfUnauthDiv = document.getElementById('dash-perf-unauthenticated');
+    const perfAdminBadge = document.getElementById('dash-perf-admin-badge');
+
+    if (currentUser) {
+        perfUnauthDiv.style.display = 'none';
+        perfAuthDiv.style.display = 'flex';
+        
+        if (currentUser.role === 'admin') {
+            perfAdminBadge.style.display = 'inline-block';
+        } else {
+            perfAdminBadge.style.display = 'none';
+        }
+
+        // Find user rank
+        const userRank = players.findIndex(p => p.id === currentUser.id) + 1;
+        const userMatches = matches.filter(m => m.completed && m.reporterId === currentUser.id);
+        const userWins = userMatches.filter(m => m.outcome === 'home' || m.outcome === 'away').length;
+        const userTies = userMatches.filter(m => m.outcome === 'tie').length;
+
+        document.getElementById('dash-perf-avatar').src = currentUser.photoURL;
+        document.getElementById('dash-perf-rank').innerText = `#${userRank}`;
+        document.getElementById('dash-perf-points').innerText = `${currentUser.points} PTS`;
+        document.getElementById('dash-perf-wins').innerText = userWins;
+        document.getElementById('dash-perf-ties').innerText = userTies;
+        document.getElementById('dash-perf-matches').innerText = userMatches.length;
+    } else {
+        perfAuthDiv.style.display = 'none';
+        perfUnauthDiv.style.display = 'block';
+        perfAdminBadge.style.display = 'none';
+    }
+
+    // 2. RENDER MINI LEADERBOARD STANDINGS CARD
+    const miniLeaderboardBody = document.getElementById('dashboard-leaderboard-list');
+    miniLeaderboardBody.innerHTML = '';
+    
+    // Display up to top 5 players on the dashboard summary
+    const displayList = players.slice(0, 5);
+    if (displayList.length === 0) {
+        miniLeaderboardBody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:1rem;">No standings yet.</td></tr>`;
+    } else {
+        displayList.forEach((player, index) => {
+            const rank = index + 1;
+            const isSelf = currentUser && player.id === currentUser.id;
+            
+            const tr = document.createElement('tr');
+            tr.style.fontWeight = isSelf ? '700' : 'normal';
+            if (isSelf) tr.style.background = 'rgba(0, 240, 255, 0.05)';
+            
+            tr.innerHTML = `
+                <td style="padding: 0.4rem 0.75rem;">#${rank}</td>
+                <td style="padding: 0.4rem 0.75rem;">
+                    <div style="display:flex; align-items:center; gap:0.5rem;">
+                        <img src="${player.photoURL}" alt="" style="width:20px; height:20px; border-radius:50%;">
+                        <span>${player.name} ${isSelf ? ' <small style="color:var(--color-primary);">(You)</small>' : ''}</span>
+                    </div>
+                </td>
+                <td style="padding: 0.4rem 0.75rem; text-align:right; font-family:monospace; color:var(--color-primary);">${player.points} PTS</td>
+            `;
+            miniLeaderboardBody.appendChild(tr);
+        });
+    }
+
+    // 3. SHOW RECENT ACTIVITY
     const activityContainer = document.getElementById('recent-activity-list');
     activityContainer.innerHTML = '';
 
@@ -399,7 +457,7 @@ function renderLeaderboard() {
             </td>
             <td>
                 <div class="player-cell">
-                    <img class="player-avatar" src="${player.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&h=100&q=80'}" alt="">
+                    <img class="player-avatar" src="${player.photoURL}" alt="">
                     <div>
                         <div class="player-name-cell">
                             ${player.name}
@@ -676,7 +734,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const loginForm = document.getElementById('credentials-login-form');
     const registerForm = document.getElementById('credentials-register-form');
 
-    // Tab toggling
     tabLogin.onclick = () => {
         tabLogin.classList.add('active');
         tabRegister.classList.remove('active');
@@ -717,7 +774,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const user = await registerWithEmail(name, email, pass);
             showToast(`Account created! Logged in as ${user.name}`, "success");
             registerForm.reset();
-            tabLogin.click(); // Switch view back to login default
+            tabLogin.click();
         } catch (err) {
             showToast(err.message || "Registration failed.", "error");
         }
@@ -899,17 +956,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     };
 
-    // Quick Mock Logins from dev panel
+    // Quick Mock Logins from dev panel (Mapped to admin and test)
     document.getElementById('mock-login-admin').onclick = () => {
-        const user = simulateMockLogin('mock-admin');
+        const user = simulateMockLogin('admin');
         showToast(`Mock Logged In: ${user.name} (Admin)`, "success");
     };
     document.getElementById('mock-login-player1').onclick = () => {
-        const user = simulateMockLogin('mock-player-1');
-        showToast(`Mock Logged In: ${user.name} (Player)`, "success");
-    };
-    document.getElementById('mock-login-player2').onclick = () => {
-        const user = simulateMockLogin('mock-player-2');
+        const user = simulateMockLogin('test');
         showToast(`Mock Logged In: ${user.name} (Player)`, "success");
     };
 
@@ -923,12 +976,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         const logoutBtn = document.getElementById('btn-logout');
         const adminTab = document.getElementById('nav-admin');
 
-        // Cards on landing page
         const unauthFlow = document.getElementById('auth-unauthenticated-flow');
         const authFlow = document.getElementById('auth-authenticated-flow');
 
         if (currentUser) {
-            // Header elements
             loginBtn.style.display = 'none';
             logoutBtn.style.display = 'inline-flex';
             profileBadge.style.display = 'flex';
@@ -937,7 +988,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('badge-user-name').innerText = currentUser.name;
             document.getElementById('badge-user-role').innerText = currentUser.role;
 
-            // Landing Card elements
             unauthFlow.style.display = 'none';
             authFlow.style.display = 'flex';
             document.getElementById('welcome-user-avatar').src = currentUser.photoURL;
@@ -951,13 +1001,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (activeView === 'admin') switchView('dashboard');
             }
         } else {
-            // Header elements
-            loginBtn.style.display = 'none'; // Keep header login hidden, use landing card
+            loginBtn.style.display = 'none';
             logoutBtn.style.display = 'none';
             profileBadge.style.display = 'none';
             adminTab.style.display = 'none';
 
-            // Landing Card elements
             unauthFlow.style.display = 'block';
             authFlow.style.display = 'none';
             
