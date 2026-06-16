@@ -6,8 +6,8 @@
     <title>FIFA Scoreboard & Tournament Bracket</title>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Custom Style Sheet -->
-    <link rel="stylesheet" href="index.css">
+    <!-- Custom Style Sheet with Cache Buster -->
+    <link rel="stylesheet" href="index.css?v=1.0.3">
 </head>
 <body>
     <div class="app-container">
@@ -18,7 +18,8 @@
                     <i class="fas fa-futbol logo-icon"></i>
                     <span>FIFA</span> Scoreboard
                 </div>
-                <nav>
+                <!-- Navigation Tabs (Hidden by default, shown when user authenticates) -->
+                <nav id="header-nav" style="display: none;">
                     <button class="nav-link active" data-view="dashboard">
                         <i class="fas fa-chart-line"></i> Dashboard
                     </button>
@@ -85,7 +86,7 @@
                                     </div>
                                 </div>
                                 <div class="auth-form-group">
-                                    <span style="font-size:0.7rem; color:var(--color-text-muted); font-weight:600; display:block; margin-bottom:0.2/rem;">PASSWORD</span>
+                                    <span style="font-size:0.7rem; color:var(--color-text-muted); font-weight:600; display:block; margin-bottom:0.2rem;">PASSWORD</span>
                                     <div class="auth-input-wrapper">
                                         <i class="fas fa-lock auth-input-icon"></i>
                                         <input type="password" class="auth-input" id="login-password" required placeholder="••••••••">
@@ -191,7 +192,7 @@
                     </div>
                 </div>
 
-                <!-- NEW Dashboard split grid for performance metrics -->
+                <!-- Dashboard split grid for performance metrics -->
                 <div class="dashboard-split-grid">
                     <!-- Individual Player Score Card -->
                     <div class="performance-card" id="dashboard-personal-card">
@@ -251,8 +252,31 @@
                     </div>
                 </div>
 
+                <!-- NEW: Tournament Rules Card (Displays when user authenticates) -->
+                <div class="settings-card" id="dashboard-rules-card" style="display: none; margin-top: 1.5rem;">
+                    <div class="settings-card-title">
+                        <i class="fas fa-scroll" style="color: var(--color-primary);"></i> Tournament Rules
+                    </div>
+                    <ul style="padding-left: 1.25rem; font-size: 0.9rem; color: var(--color-text-muted); display: flex; flex-direction: column; gap: 0.5rem; list-style-type: decimal;">
+                        <li><strong>Competitor Points:</strong> Points are earned by reporting match scores. Points are awarded based on the tournament round level.</li>
+                        <li><strong>Round Weights:</strong>
+                            <ul style="padding-left: 1.25rem; margin-top: 0.25rem; list-style-type: circle; display: grid; grid-template-columns: 1fr 1fr; gap: 0.25rem 1.5rem; max-width: 600px;">
+                                <li>Level 1 (Round of 64): Win = <span id="rules-lvl1-win" style="color:white; font-weight:600;">10</span> pts | Tie = <span id="rules-lvl1-tie" style="color:white; font-weight:600;">10</span> pts</li>
+                                <li>Level 2 (Round of 32): Win = <span id="rules-lvl2-win" style="color:white; font-weight:600;">20</span> pts | Tie = <span id="rules-lvl2-tie" style="color:white; font-weight:600;">0</span> pts</li>
+                                <li>Level 3 (Round of 16): Win = <span id="rules-lvl3-win" style="color:white; font-weight:600;">40</span> pts | Tie = <span id="rules-lvl3-tie" style="color:white; font-weight:600;">0</span> pts</li>
+                                <li>Level 4 (Round of 8): Win = <span id="rules-lvl4-win" style="color:white; font-weight:600;">60</span> pts | Tie = <span id="rules-lvl4-tie" style="color:white; font-weight:600;">0</span> pts</li>
+                                <li>Level 5 (Round of 4): Win = <span id="rules-lvl5-win" style="color:white; font-weight:600;">80</span> pts | Tie = <span id="rules-lvl5-tie" style="color:white; font-weight:600;">0</span> pts</li>
+                                <li>Level 6 (Finals): Win = <span id="rules-lvl6-win" style="color:white; font-weight:600;">100</span> pts | Tie = <span id="rules-lvl6-tie" style="color:white; font-weight:600;">0</span> pts</li>
+                            </ul>
+                        </li>
+                        <li><strong>Progression:</strong> Winning a match automatically propagates that team to the next round slot.</li>
+                        <li><strong>No Knockout Ties:</strong> Ties are only valid in Level 1. Levels 2+ must end in a winner (including penalties).</li>
+                        <li><strong>Retroactive Updates:</strong> Any points adjusted in the Admin Panel immediately recalculate all player standings retroactively.</li>
+                    </ul>
+                </div>
+
                 <div class="admin-grid" style="grid-template-columns: 1fr;">
-                    <div class="settings-card">
+                    <div class="settings-card" style="margin-top: 1.5rem;">
                         <div class="settings-card-title">
                             <i class="fas fa-history" style="color: var(--color-success);"></i> Recent Matches Recorded
                         </div>
@@ -580,7 +604,7 @@
         </div>
     </div>
 
-    <!-- Core App Module script -->
-    <script type="module" src="app.js"></script>
+    <!-- Core App Module script with Cache Buster -->
+    <script type="module" src="app.js?v=1.0.3"></script>
 </body>
 </html>
