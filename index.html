@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FIFA Scoreboard & Tournament Bracket</title>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Style Sheet -->
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- HEADER / NAVIGATION -->
+        <header>
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-futbol logo-icon"></i>
+                    <span>FIFA</span> Scoreboard
+                </div>
+                <nav>
+                    <button class="nav-link active" data-view="dashboard">
+                        <i class="fas fa-chart-line"></i> Dashboard
+                    </button>
+                    <button class="nav-link" data-view="bracket">
+                        <i class="fas fa-sitemap"></i> Bracket
+                    </button>
+                    <button class="nav-link" data-view="leaderboard">
+                        <i class="fas fa-trophy"></i> Leaderboard
+                    </button>
+                    <button class="nav-link" id="nav-admin" data-view="admin" style="display: none;">
+                        <i class="fas fa-cog"></i> Admin Panel
+                    </button>
+                </nav>
+                <div class="user-section">
+                    <!-- User details when logged in -->
+                    <div class="user-profile-badge" id="user-profile-badge" style="display: none;">
+                        <img class="user-avatar" id="badge-user-avatar" src="" alt="Avatar">
+                        <div class="user-info-text">
+                            <span class="user-name" id="badge-user-name">-</span>
+                            <span class="user-role" id="badge-user-role">-</span>
+                        </div>
+                    </div>
+                    <!-- Auth Actions -->
+                    <button class="btn btn-primary" id="btn-login">
+                        <i class="fab fa-google"></i> Sign In
+                    </button>
+                    <button class="btn btn-secondary" id="btn-logout" style="display: none;">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN CONTENT VIEWPORTS -->
+        <main>
+            <!-- 1. DASHBOARD VIEW -->
+            <section class="view-section active" id="view-dashboard">
+                <div class="hero-card">
+                    <h1 class="hero-title">FIFA Tournament Tracker</h1>
+                    <p class="hero-subtitle">Record match scores, track winner progressions up to the finals, and compete on the global leaderboard. Admin holds points management control.</p>
+                </div>
+
+                <div class="dashboard-stats">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-futbol"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Matches Completed</span>
+                            <span class="stat-value" id="stat-completed-matches">0/0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon secondary">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Registered Players</span>
+                            <span class="stat-value" id="stat-registered-players">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon accent">
+                            <i class="fas fa-crown"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Top Competitor</span>
+                            <span class="stat-value" id="stat-top-player">-</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-star" style="color:var(--color-primary);"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Highest Score</span>
+                            <span class="stat-value" id="stat-top-score">0 pts</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="admin-grid" style="grid-template-columns: 1fr;">
+                    <div class="settings-card">
+                        <div class="settings-card-title">
+                            <i class="fas fa-history" style="color: var(--color-success);"></i> Recent Matches Recorded
+                        </div>
+                        <div id="recent-activity-list">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. BRACKET VIEW -->
+            <section class="view-section" id="view-bracket">
+                <div class="bracket-filters">
+                    <h2 style="font-size: 1.25rem; font-weight: 700;">Tournament Brackets</h2>
+                    <div class="filter-buttons" id="bracket-filter-tabs">
+                        <!-- Filter tabs filled by JS -->
+                    </div>
+                </div>
+
+                <!-- Scrollable viewport for matches -->
+                <div class="bracket-viewport">
+                    <div class="bracket-rounds-container" id="bracket-rounds-container">
+                        <!-- Brackets lists rendered by JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. LEADERBOARD VIEW -->
+            <section class="view-section" id="view-leaderboard">
+                <div class="leaderboard-container">
+                    <div class="leaderboard-header">
+                        <h2 class="leaderboard-title"><i class="fas fa-medal" style="color: var(--color-secondary);"></i> Competitor Leaderboard</h2>
+                        <span style="font-size: 0.85rem; color: var(--color-text-muted);">Points updated in real-time</span>
+                    </div>
+                    <table class="leaderboard-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 80px;">Rank</th>
+                                <th>Competitor Name</th>
+                                <th>Matches Reported</th>
+                                <th style="width: 150px;">Score</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-list">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- 4. ADMIN PANEL VIEW -->
+            <section class="view-section" id="view-admin">
+                <div class="admin-grid">
+                    <!-- Left Column: Settings Form -->
+                    <div class="settings-card">
+                        <div class="settings-card-title">
+                            <i class="fas fa-sliders-h" style="color: var(--color-primary);"></i> Level Points System
+                        </div>
+                        <form id="admin-settings-form">
+                            <!-- Level 1 -->
+                            <div class="form-group">
+                                <label class="form-label">Level 1 (Round of 64)</label>
+                                <div class="form-row">
+                                    <div>
+                                        <span style="font-size:0.7rem; color:var(--color-text-muted);">Win Points</span>
+                                        <input type="number" class="form-input" id="pts-lvl1-win" min="0">
+                                    </div>
+                                    <div>
+                                        <span style="font-size:0.7rem; color:var(--color-text-muted);">Tie Points</span>
+                                        <input type="number" class="form-input" id="pts-lvl1-tie" min="0">
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Level 2 -->
+                            <div class="form-group">
+                                <label class="form-label">Level 2 (Round of 32)</label>
+                                <div class="form-row">
+                                    <div>
+                                        <span style="font-size:0.7rem; color:var(--color-text-muted);">Win Points</span>
+                                        <input type="number" class="form-input" id="pts-lvl2-win" min="0">
+                                    </div>
+                                    <div>
+                                        <span style="font-size:0.7rem; color:var(--color-text-muted);">Tie Points</span>
+                                        <input type="number" class="form-input" id="pts-lvl2-tie" min="0">
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Level 3 -->
+                            <div class="form-group">
+                                <label class="form-label">Level 3 (Round of 16)</label>
+                                <div class="form-row">
+                                    <div>
+                                        <span style="font-size:0.7rem; color:var(--color-text-muted);">Win Points</span>
+                                        <input type="number" class="form-input" id="pts-lvl3-win" min="0">
+                                    </div>
+                                    <div>
+                                        <span style="font-size:0.7rem; color:var(--color-text-muted);">Tie Points</span>
+                                        <input type="number" class="form-input" id="pts-lvl3-tie" min="0">
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Level 4 -->
+                            <div class="form-group">
+                                <label class="form-label">Level 4 (Round of 8)</label>
+                                <div class="form-row">
+                                    <div>
+                                        <span style="font-size:0.7rem; color:var(--color-text-muted);">Win Points</span>
+                                        <input type="number" class="form-input" id="pts-lvl4-win" min="0">
+                                    </div>
+                                    <div>
+                                        <span style="font-size:0.7rem; color:var(--color-text-muted);">Tie Points</span>
+                                        <input type="number" class="form-input" id="pts-lvl4-tie" min="0">
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Level 5 -->
+                            <div class="form-group">
+                                <label class="form-label">Level 5 (Round of 4)</label>
+                                <div class="form-row">
+                                    <div>
+                                        <span style="font-size:0.7rem; color:var(--color-text-muted);">Win Points</span>
+                                        <input type="number" class="form-input" id="pts-lvl5-win" min="0">
+                                    </div>
+                                    <div>
+                                        <span style="font-size:0.7rem; color:var(--color-text-muted);">Tie Points</span>
+                                        <input type="number" class="form-input" id="pts-lvl5-tie" min="0">
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Level 6 -->
+                            <div class="form-group">
+                                <label class="form-label">Level 6 (Finals)</label>
+                                <div class="form-row">
+                                    <div>
+                                        <span style="font-size:0.7rem; color:var(--color-text-muted);">Win Points</span>
+                                        <input type="number" class="form-input" id="pts-lvl6-win" min="0">
+                                    </div>
+                                    <div>
+                                        <span style="font-size:0.7rem; color:var(--color-text-muted);">Tie Points</span>
+                                        <input type="number" class="form-input" id="pts-lvl6-tie" min="0">
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
+                                <i class="fas fa-save"></i> Save Configurations
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Right Column: Admin Operations & Roles -->
+                    <div style="display:flex; flex-direction:column; gap:2rem;">
+                        <!-- Tournament reset actions -->
+                        <div class="settings-card">
+                            <div class="settings-card-title">
+                                <i class="fas fa-trash-alt" style="color: var(--color-danger);"></i> Reset Tournament Bracket
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Reset Method</label>
+                                <select class="form-input" id="admin-reset-type">
+                                    <option value="clear">Clear scores only (keep existing team bracket)</option>
+                                    <option value="randomize">Randomize all 64 teams & Clear bracket</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="display:flex; align-items:center; gap:0.5rem; margin-bottom:1.5rem;">
+                                <input type="checkbox" id="admin-reset-points" style="width:18px; height:18px; cursor:pointer;">
+                                <label for="admin-reset-points" style="font-size:0.85rem; font-weight:600; cursor:pointer;">Reset all player scores to 0</label>
+                            </div>
+                            <button class="btn btn-accent" id="btn-execute-reset" style="width:100%;">
+                                <i class="fas fa-exclamation-triangle"></i> Execute Tournament Reset
+                            </button>
+                        </div>
+
+                        <!-- User Management roles -->
+                        <div class="settings-card" style="flex:1;">
+                            <div class="settings-card-title">
+                                <i class="fas fa-user-shield" style="color: var(--color-secondary);"></i> System Users & Roles
+                            </div>
+                            <table class="leaderboard-table" style="font-size:0.85rem;">
+                                <thead>
+                                    <tr>
+                                        <th>User</th>
+                                        <th>Role</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-users-list">
+                                    <!-- Rendered dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MATCH REPORT MODAL -->
+    <div class="modal-overlay" id="match-modal">
+        <div class="modal-content">
+            <button class="modal-close" id="modal-close-btn">&times;</button>
+            <h3 class="modal-title" id="modal-match-id">Match Score Submission</h3>
+            
+            <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                <!-- Team comparison columns -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: center; text-align: center;">
+                    <div class="score-input-box">
+                        <img id="modal-team-a-flag" src="" alt="" style="width: 80px; height: 55px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border-color); box-shadow: var(--shadow-md);">
+                        <div id="modal-team-a-name" style="font-weight: 700; margin-top: 0.5rem; font-size: 1rem;">Team A</div>
+                    </div>
+                    <div class="score-input-box">
+                        <img id="modal-team-b-flag" src="" alt="" style="width: 80px; height: 55px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border-color); box-shadow: var(--shadow-md);">
+                        <div id="modal-team-b-name" style="font-weight: 700; margin-top: 0.5rem; font-size: 1rem;">Team B</div>
+                    </div>
+                </div>
+
+                <!-- Score Inputs -->
+                <div class="score-inputs">
+                    <div class="score-input-box">
+                        <input type="number" class="score-number-input" id="modal-score-a" min="0" placeholder="0">
+                        <span style="font-size: 0.75rem; color: var(--color-text-muted);">Goals</span>
+                    </div>
+                    <div style="font-size: 1.5rem; font-weight: 800; color: var(--color-text-muted);">:</div>
+                    <div class="score-input-box">
+                        <input type="number" class="score-number-input" id="modal-score-b" min="0" placeholder="0">
+                        <span style="font-size: 0.75rem; color: var(--color-text-muted);">Goals</span>
+                    </div>
+                </div>
+
+                <div class="outcome-selector" style="display:none;"> <!-- Hidden: auto-calculated from score inputs -->
+                    <button class="outcome-btn" id="outcome-win-a">
+                        <i class="fas fa-trophy"></i>
+                        <span>Win Team A</span>
+                    </button>
+                    <button class="outcome-btn" id="outcome-win-b">
+                        <i class="fas fa-trophy"></i>
+                        <span>Win Team B</span>
+                    </button>
+                    <button class="outcome-btn" id="outcome-tie" style="grid-column: span 2;">
+                        <i class="fas fa-handshake"></i>
+                        <span>Match Tie</span>
+                    </button>
+                </div>
+
+                <!-- Level 2-6 Knockout Tie Warning -->
+                <div id="tie-knockout-warning" style="display: none; padding: 0.75rem; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; color: #f87171; font-size: 0.8rem; text-align: center;">
+                    <i class="fas fa-exclamation-triangle"></i> Knockout rounds cannot end in a tie. Please decide the winner (e.g. including penalty shootout goals).
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 1rem; margin-top: 1rem;">
+                    <button class="btn btn-secondary" id="modal-cancel">Cancel</button>
+                    <button class="btn btn-primary" id="modal-submit"><i class="fas fa-save"></i> Save Result</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- SIDEBAR FOR OFFLINE MOCK LOGIN & FIREBASE SETUP -->
+    <button class="setup-toggle-btn" id="btn-open-setup" title="Authentication & Database Settings">
+        <i class="fas fa-database"></i>
+    </button>
+
+    <div class="setup-sidebar" id="setup-sidebar">
+        <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:1rem; margin-bottom:1.5rem;">
+                <h3 style="font-size:1.15rem; font-weight:700;"><i class="fas fa-tools"></i> Dev Settings</h3>
+                <button class="setup-sidebar-close" id="btn-close-setup"><i class="fas fa-times"></i></button>
+            </div>
+
+            <!-- Firebase Setup -->
+            <h4 style="font-size:0.85rem; font-weight:700; text-transform:uppercase; color:var(--color-primary); margin-bottom:0.75rem;">Firebase Integration</h4>
+            <div id="firebase-config-status" style="font-size:0.75rem; margin-bottom:1rem;"></div>
+            
+            <div style="display:flex; flex-direction:column; gap:0.75rem;">
+                <div>
+                    <span style="font-size:0.7rem; color:var(--color-text-muted);">API Key</span>
+                    <input type="password" class="form-input" id="fb-apikey" style="padding:0.4rem 0.6rem; font-size:0.8rem;">
+                </div>
+                <div>
+                    <span style="font-size:0.7rem; color:var(--color-text-muted);">Auth Domain</span>
+                    <input type="text" class="form-input" id="fb-authdomain" style="padding:0.4rem 0.6rem; font-size:0.8rem;">
+                </div>
+                <div>
+                    <span style="font-size:0.7rem; color:var(--color-text-muted);">Project ID</span>
+                    <input type="text" class="form-input" id="fb-projectid" style="padding:0.4rem 0.6rem; font-size:0.8rem;">
+                </div>
+                <div>
+                    <span style="font-size:0.7rem; color:var(--color-text-muted);">Storage Bucket</span>
+                    <input type="text" class="form-input" id="fb-storagebucket" style="padding:0.4rem 0.6rem; font-size:0.8rem;">
+                </div>
+                <div>
+                    <span style="font-size:0.7rem; color:var(--color-text-muted);">Messaging Sender ID</span>
+                    <input type="text" class="form-input" id="fb-messagingsenderid" style="padding:0.4rem 0.6rem; font-size:0.8rem;">
+                </div>
+                <div>
+                    <span style="font-size:0.7rem; color:var(--color-text-muted);">App ID</span>
+                    <input type="text" class="form-input" id="fb-appid" style="padding:0.4rem 0.6rem; font-size:0.8rem;">
+                </div>
+                
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-top:0.5rem;">
+                    <button class="btn btn-secondary" id="btn-clear-config" style="padding:0.4rem; font-size:0.75rem;">Disconnect</button>
+                    <button class="btn btn-primary" id="btn-save-config" style="padding:0.4rem; font-size:0.75rem;">Connect DB</button>
+                </div>
+            </div>
+
+            <!-- Offline Mock Login Panel -->
+            <div id="mock-auth-panel" class="mock-login-panel">
+                <h4 style="font-size:0.8rem; font-weight:700; text-transform:uppercase; color:var(--color-secondary); margin-bottom:0.75rem;">Mock Authentication</h4>
+                <p style="font-size:0.75rem; color:var(--color-text-muted); margin-bottom:0.75rem;">Simulate Google logins locally without Firebase credentials:</p>
+                <button class="mock-user-btn" id="mock-login-admin">
+                    <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=30&h=30&q=80" alt="" style="width:20px; height:20px; border-radius:50%;">
+                    <span>FIFA Admin</span>
+                    <span class="badge-round admin">Admin</span>
+                </button>
+                <button class="mock-user-btn" id="mock-login-player1">
+                    <img src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=30&h=30&q=80" alt="" style="width:20px; height:20px; border-radius:50%;">
+                    <span>Marcus Rashford</span>
+                    <span class="badge-round player">Player</span>
+                </button>
+                <button class="mock-user-btn" id="mock-login-player2">
+                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=30&h=30&q=80" alt="" style="width:20px; height:20px; border-radius:50%;">
+                    <span>Bukayo Saka</span>
+                    <span class="badge-round player">Player</span>
+                </button>
+
+                <div style="border-top: 1px solid var(--border-color); margin-top: 0.75rem; padding-top: 0.75rem;">
+                    <span style="font-size:0.7rem; color:var(--color-text-muted);">Register Custom Player</span>
+                    <input type="text" class="form-input" id="mock-reg-name" placeholder="Name" style="padding:0.4rem; font-size:0.8rem; margin:0.25rem 0 0.5rem 0;">
+                    <div style="display:flex; gap:0.5rem;">
+                        <select class="form-input" id="mock-reg-role" style="padding:0.4rem; font-size:0.8rem; flex:1;">
+                            <option value="player">Player</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                        <button class="btn btn-secondary" id="btn-mock-register" style="padding:0.4rem; font-size:0.75rem;">Register</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="font-size:0.65rem; color:var(--color-text-muted); text-align:center; border-top:1px solid var(--border-color); padding-top:1rem;">
+            FIFA Scoreboard Dev Utilities &copy; 2026
+        </div>
+    </div>
+
+    <!-- Core App Module script -->
+    <script type="module" src="app.js"></script>
+</body>
+</html>
