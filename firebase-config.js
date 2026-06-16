@@ -124,16 +124,18 @@ export function isFirebaseEnabled() {
 export async function loginWithGoogle() {
     if (firebaseEnabled) {
         const { GoogleAuthProvider: AuthProvider, signInWithPopup: popupSignIn } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js');
+        const { doc: fsDoc, getDoc: fsGetDoc, setDoc: fsSetDoc, collection: fsColl, getDocs: fsGetDocs } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js');
+        
         const provider = new AuthProvider();
         const result = await popupSignIn(auth, provider);
         
         const user = result.user;
-        const playerRef = doc(db, 'players', user.uid);
-        const playerSnap = await getDoc(playerRef);
+        const playerRef = fsDoc(db, 'players', user.uid);
+        const playerSnap = await fsGetDoc(playerRef);
         
         if (!playerSnap.exists()) {
-            const playersColl = collection(db, 'players');
-            const playersSnap = await getDocs(playersColl);
+            const playersColl = fsColl(db, 'players');
+            const playersSnap = await fsGetDocs(playersColl);
             const isFirstUser = playersSnap.empty;
             
             const newPlayerData = {
@@ -144,7 +146,7 @@ export async function loginWithGoogle() {
                 role: (isFirstUser || user.email.toLowerCase() === 'admin@fifa.com') ? 'admin' : 'player',
                 points: 0
             };
-            await setDoc(playerRef, newPlayerData);
+            await fsSetDoc(playerRef, newPlayerData);
             return newPlayerData;
         } else {
             return playerSnap.data();
@@ -480,5 +482,36 @@ export async function resetTournament(matches, playersReset = false) {
             mockDb.players.forEach(p => p.points = 0);
         }
         saveMockDB(mockDb);
+    }
+}
+
+// Security API - Password reset
+export async function updateCurrentUserPassword(newPassword) {
+    if (firebaseEnabled) {
+        const { updatePassword: fbUpdatePassword } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js');
+        if (auth.currentUser) {
+            await fbUpdatePassword(auth.currentUser, newPassword);
+        } else {
+            throw new Error("No authenticated Firebase user found.");
+        }
+    } else {
+        const mockDb = getMockDB();
+        const savedMockUser = localStorage.getItem('fifa_current_mock_user');
+        if (savedMockUser) {
+            const currentMock = JSON.parse(savedMockUser);
+            const userInDb = mockDb.players.find(p => p.id === currentMock.id);
+            if (userInDb) {
+                userInDb.password = newPassword;
+                saveMockDB(mockDb);
+                
+                // Update local storage credentials
+                currentMock.password = newPassword;
+                localStorage.setItem('fifa_current_mock_user', JSON.stringify(currentMock));
+            } else {
+                throw new Error("Mock user not found in database.");
+            }
+        } else {
+            throw new Error("No mock user is currently signed in.");
+        }
     }
 }
