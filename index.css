@@ -1398,3 +1398,26 @@ main {
     50% { opacity: 1; }
     100% { opacity: 0.5; }
 }
+
+/* Login Page Layout & Centering Modifications */
+body.login-layout {
+    background-image: linear-gradient(rgba(8, 11, 16, 0.65), rgba(8, 11, 16, 0.8)), url('assets/torrey_pines_soccer.png');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+}
+
+.hero-container.login-mode {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 80vh;
+    grid-template-columns: 1fr;
+    margin-bottom: 0;
+}
+
+.hero-container.login-mode .auth-card {
+    max-width: 420px;
+    width: 100%;
+    animation: fadeIn 0.5s ease-out;
+}
