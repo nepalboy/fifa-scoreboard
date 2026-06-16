@@ -4,6 +4,8 @@ import {
     saveFirebaseConfig,
     clearFirebaseConfig,
     loginWithGoogle,
+    loginWithEmail,
+    registerWithEmail,
     logout,
     subscribeToAuth,
     getSettings,
@@ -174,7 +176,6 @@ async function initializeNewBracket(resetScores = false) {
     const initialMatches = [];
     
     // Level 1: Round of 64 (Matches 1-32)
-    // Populate with 64 teams
     for (let i = 1; i <= 32; i++) {
         const teamAIndex = (i - 1) * 2;
         const teamBIndex = teamAIndex + 1;
@@ -242,7 +243,6 @@ async function recalculatePlayerPoints() {
 // ----------------------------------------------------
 
 function renderDashboard() {
-    // Stats calculation
     const totalMatches = matches.length;
     const completedCount = matches.filter(m => m.completed).length;
     const activePlayersCount = players.length;
@@ -260,7 +260,7 @@ function renderDashboard() {
 
     const completedMatchesSorted = [...matches]
         .filter(m => m.completed)
-        .sort((a,b) => b.id - a.id) // Show higher rounds / later matches first
+        .sort((a,b) => b.id - a.id)
         .slice(0, 5);
 
     if (completedMatchesSorted.length === 0) {
@@ -302,7 +302,6 @@ function renderBracket() {
     const roundsContainer = document.getElementById('bracket-rounds-container');
     roundsContainer.innerHTML = '';
 
-    // Render based on active round filter
     let roundsToRender = [1, 2, 3, 4, 5, 6];
     if (activeRoundFilter !== 'all') {
         roundsToRender = [parseInt(activeRoundFilter)];
@@ -367,7 +366,6 @@ function renderBracket() {
         roundsContainer.appendChild(roundColumn);
     });
 
-    // Add match card click event listeners
     document.querySelectorAll('.match-card').forEach(card => {
         card.addEventListener('click', () => {
             const matchId = parseInt(card.getAttribute('data-match-id'));
@@ -425,7 +423,6 @@ function renderLeaderboard() {
 }
 
 function renderAdmin() {
-    // Populate Settings Inputs
     for (let level = 1; level <= 6; level++) {
         const points = settings.levelPoints[level];
         const winInput = document.getElementById(`pts-lvl${level}-win`);
@@ -435,7 +432,6 @@ function renderAdmin() {
         if (tieInput) tieInput.value = points.tie;
     }
 
-    // Render Admin Management Users List
     const usersTable = document.getElementById('admin-users-list');
     usersTable.innerHTML = '';
 
@@ -469,7 +465,6 @@ function renderAdmin() {
         usersTable.appendChild(tr);
     });
 
-    // Add Promote click listener
     document.querySelectorAll('.promote-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
             const userId = btn.getAttribute('data-user-id');
@@ -508,7 +503,6 @@ function openMatchModal(match) {
     scoreA.value = match.homeScore !== null ? match.homeScore : '';
     scoreB.value = match.awayScore !== null ? match.awayScore : '';
 
-    // Outcome visual buttons
     const outcomeWinA = document.getElementById('outcome-win-a');
     const outcomeWinB = document.getElementById('outcome-win-b');
     const outcomeTie = document.getElementById('outcome-tie');
@@ -523,11 +517,9 @@ function openMatchModal(match) {
         if (match.outcome === 'tie') outcomeTie.classList.add('selected-tie');
     }
 
-    // Show warnings if Knockout Tie
     const tieWarning = document.getElementById('tie-knockout-warning');
     tieWarning.style.display = 'none';
 
-    // Auto calculate outcome selection on input change
     const updateOutcomeButtons = () => {
         const sA = parseInt(scoreA.value);
         const sB = parseInt(scoreB.value);
@@ -596,39 +588,32 @@ async function submitMatchOutcome() {
         winnerTeam = selectedMatch.awayTeam;
     }
 
-    // Tie safety in knockout rounds (must have a winner)
     if (outcome === 'tie' && selectedMatch.level > 1) {
-        showToast("Ties are only allowed in Level 1 (group stage/first level). Knockout rounds require a winner.", "error");
+        showToast("Knockout rounds cannot end in a tie. Decide a winner.", "error");
         return;
     }
 
-    // Update match structure
     selectedMatch.homeScore = scoreA;
     selectedMatch.awayScore = scoreB;
     selectedMatch.outcome = outcome;
     selectedMatch.completed = true;
     selectedMatch.reporterId = currentUser.id;
 
-    // Apply points to player instantly
     const pointsConfig = settings.levelPoints[selectedMatch.level];
     const pointsAwarded = outcome === 'tie' ? Number(pointsConfig.tie) : Number(pointsConfig.win);
     
-    // Save match to database
     await saveMatch(selectedMatch);
     showToast(`Match recorded! You earned +${pointsAwarded} points.`, "success");
 
-    // Advance Winner to next bracket round (if not the finals)
     const nextInfo = getNextMatchInfo(selectedMatch.id);
     if (nextInfo && winnerTeam) {
         const nextMatch = matches.find(m => m.id === nextInfo.nextId);
         if (nextMatch) {
-            // Propagate winner
             if (nextInfo.slot === 'home') {
                 nextMatch.homeTeam = winnerTeam;
             } else {
                 nextMatch.awayTeam = winnerTeam;
             }
-            // Clear any subsequent match results recursively if bracket changes
             nextMatch.homeScore = null;
             nextMatch.awayScore = null;
             nextMatch.outcome = null;
@@ -639,7 +624,6 @@ async function submitMatchOutcome() {
         }
     }
 
-    // Recalculate all scores & refresh UI
     await recalculatePlayerPoints();
     await loadData();
     
@@ -684,27 +668,101 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('modal-close-btn').onclick = closeMatchModal;
     document.getElementById('modal-submit').onclick = submitMatchOutcome;
 
-    // Setup Auth clicks
+    // ----------------------------------------------------
+    // LANDING PAGE AUTH CARD EVENT LISTENERS
+    // ----------------------------------------------------
+    const tabLogin = document.getElementById('tab-login');
+    const tabRegister = document.getElementById('tab-register');
+    const loginForm = document.getElementById('credentials-login-form');
+    const registerForm = document.getElementById('credentials-register-form');
+
+    // Tab toggling
+    tabLogin.onclick = () => {
+        tabLogin.classList.add('active');
+        tabRegister.classList.remove('active');
+        loginForm.style.display = 'block';
+        registerForm.style.display = 'none';
+    };
+
+    tabRegister.onclick = () => {
+        tabRegister.classList.add('active');
+        tabLogin.classList.remove('active');
+        registerForm.style.display = 'block';
+        loginForm.style.display = 'none';
+    };
+
+    // Credentials login submit
+    loginForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('login-email').value.trim();
+        const pass = document.getElementById('login-password').value;
+
+        try {
+            const user = await loginWithEmail(email, pass);
+            showToast(`Welcome back, ${user.name}!`, "success");
+            loginForm.reset();
+        } catch (err) {
+            showToast(err.message || "Login failed.", "error");
+        }
+    };
+
+    // Credentials registration submit
+    registerForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const name = document.getElementById('reg-fullname').value.trim();
+        const email = document.getElementById('reg-email').value.trim();
+        const pass = document.getElementById('reg-password').value;
+
+        try {
+            const user = await registerWithEmail(name, email, pass);
+            showToast(`Account created! Logged in as ${user.name}`, "success");
+            registerForm.reset();
+            tabLogin.click(); // Switch view back to login default
+        } catch (err) {
+            showToast(err.message || "Registration failed.", "error");
+        }
+    };
+
+    // Header Sign In (Fallback Google login trigger)
     document.getElementById('btn-login').onclick = async () => {
         try {
             const user = await loginWithGoogle();
             if (user) showToast(`Signed in as ${user.name}`, "success");
         } catch (e) {
-            console.error(e);
-            showToast("Google Sign-In failed or was cancelled.", "error");
+            showToast("Google Sign-In failed.", "error");
         }
     };
-    document.getElementById('btn-logout').onclick = async () => {
+
+    // Card Google Login
+    document.getElementById('btn-google-login').onclick = async () => {
+        try {
+            const user = await loginWithGoogle();
+            if (user) showToast(`Signed in as ${user.name}`, "success");
+        } catch (e) {
+            showToast("Google Sign-In failed.", "error");
+        }
+    };
+
+    // Global Logouts
+    const handleLogoutAction = async () => {
         await logout();
         showToast("Signed out successfully", "info");
     };
+    document.getElementById('btn-logout').onclick = handleLogoutAction;
+    document.getElementById('btn-dashboard-logout').onclick = handleLogoutAction;
 
-    // Firebase configuration Panel listeners
+    // Quick-link to Brackets from Landing Card
+    document.getElementById('btn-dashboard-go-brackets').onclick = () => {
+        switchView('bracket');
+    };
+
+    // ----------------------------------------------------
+    // DEV SETTINGS PANEL & ADMIN TOOLS
+    // ----------------------------------------------------
     const setupSidebar = document.getElementById('setup-sidebar');
     document.getElementById('btn-open-setup').onclick = () => setupSidebar.classList.add('active');
     document.getElementById('btn-close-setup').onclick = () => setupSidebar.classList.remove('active');
     
-    // Fill in saved firebase config values
     const savedConfig = getSavedFirebaseConfig();
     const configStatusText = document.getElementById('firebase-config-status');
     if (savedConfig) {
@@ -719,7 +777,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         configStatusText.innerHTML = '<span style="color:var(--color-warning); font-weight:700;"><i class="fas fa-exclamation-triangle"></i> Running in Offline Mock Mode</span>';
     }
 
-    // Save Firebase Config
     document.getElementById('btn-save-config').onclick = () => {
         const apiKey = document.getElementById('fb-apikey').value.trim();
         const authDomain = document.getElementById('fb-authdomain').value.trim();
@@ -735,7 +792,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         try {
             saveFirebaseConfig({ apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId });
-            showToast("Firebase Config saved! Reloading application...", "success");
+            showToast("Firebase Config saved! Reloading...", "success");
         } catch (e) {
             showToast(e.message, "error");
         }
@@ -745,11 +802,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         clearFirebaseConfig();
     };
 
-    // Setup Admin points submit form
     document.getElementById('admin-settings-form').onsubmit = async (e) => {
         e.preventDefault();
         if (!currentUser || currentUser.role !== 'admin') {
-            showToast("Only Admin can save point configurations.", "error");
+            showToast("Admin access required.", "error");
             return;
         }
 
@@ -768,7 +824,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             await saveSettings(newSettings);
             settings = newSettings;
-            showToast("Points configurations updated successfully! Recalculating player scores...", "success");
+            showToast("Configurations saved! Recalculating scores...", "success");
             await recalculatePlayerPoints();
             await loadData();
             renderBracket();
@@ -779,7 +835,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     };
 
-    // Reset Tournament options
     document.getElementById('btn-execute-reset').onclick = async () => {
         if (!currentUser || currentUser.role !== 'admin') {
             showToast("Unauthorized! Admin access required.", "error");
@@ -789,9 +844,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const resetType = document.getElementById('admin-reset-type').value;
         const resetPoints = document.getElementById('admin-reset-points').checked;
 
-        if (confirm("Are you sure you want to perform this tournament reset? This action cannot be undone.")) {
+        if (confirm("Reset tournament? This cannot be undone.")) {
             if (resetType === 'randomize') {
-                // Shuffle teams
                 const shuffled = [...TEAMS_64].sort(() => Math.random() - 0.5);
                 const newMatches = [];
                 for (let i = 1; i <= 32; i++) {
@@ -823,15 +877,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
                 await resetTournament(newMatches, resetPoints);
             } else {
-                // Just clear scores of current bracket
                 matches.forEach(m => {
                     m.homeScore = null;
                     m.awayScore = null;
                     m.outcome = null;
                     m.completed = false;
                     m.reporterId = null;
-                    
-                    // Clear knockout slots recursively
                     if (m.level > 1) {
                         m.homeTeam = null;
                         m.awayTeam = null;
@@ -848,29 +899,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     };
 
-    // Setup mock login triggers
+    // Quick Mock Logins from dev panel
     document.getElementById('mock-login-admin').onclick = () => {
         const user = simulateMockLogin('mock-admin');
-        showToast(`Mock Signed In: ${user.name} (Admin)`, "success");
+        showToast(`Mock Logged In: ${user.name} (Admin)`, "success");
     };
     document.getElementById('mock-login-player1').onclick = () => {
         const user = simulateMockLogin('mock-player-1');
-        showToast(`Mock Signed In: ${user.name} (Player)`, "success");
+        showToast(`Mock Logged In: ${user.name} (Player)`, "success");
     };
     document.getElementById('mock-login-player2').onclick = () => {
         const user = simulateMockLogin('mock-player-2');
-        showToast(`Mock Signed In: ${user.name} (Player)`, "success");
-    };
-    document.getElementById('btn-mock-register').onclick = () => {
-        const name = document.getElementById('mock-reg-name').value.trim();
-        const role = document.getElementById('mock-reg-role').value;
-        if (!name) {
-            showToast("Enter a name to register.", "error");
-            return;
-        }
-        const user = simulateMockRegister(name, role);
-        showToast(`Registered and Mock Logged In: ${user.name}`, "success");
-        document.getElementById('mock-reg-name').value = '';
+        showToast(`Mock Logged In: ${user.name} (Player)`, "success");
     };
 
     // ----------------------------------------------------
@@ -882,9 +922,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         const loginBtn = document.getElementById('btn-login');
         const logoutBtn = document.getElementById('btn-logout');
         const adminTab = document.getElementById('nav-admin');
-        const mockAuthTip = document.getElementById('mock-auth-panel');
+
+        // Cards on landing page
+        const unauthFlow = document.getElementById('auth-unauthenticated-flow');
+        const authFlow = document.getElementById('auth-authenticated-flow');
 
         if (currentUser) {
+            // Header elements
             loginBtn.style.display = 'none';
             logoutBtn.style.display = 'inline-flex';
             profileBadge.style.display = 'flex';
@@ -893,44 +937,41 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('badge-user-name').innerText = currentUser.name;
             document.getElementById('badge-user-role').innerText = currentUser.role;
 
-            // Show admin panel navigation only to admin role
+            // Landing Card elements
+            unauthFlow.style.display = 'none';
+            authFlow.style.display = 'flex';
+            document.getElementById('welcome-user-avatar').src = currentUser.photoURL;
+            document.getElementById('welcome-user-name').innerText = currentUser.name;
+            document.getElementById('welcome-user-role').innerText = currentUser.role;
+
             if (currentUser.role === 'admin') {
                 adminTab.style.display = 'inline-flex';
             } else {
                 adminTab.style.display = 'none';
-                if (activeView === 'admin') {
-                    switchView('dashboard');
-                }
+                if (activeView === 'admin') switchView('dashboard');
             }
         } else {
-            loginBtn.style.display = 'inline-flex';
+            // Header elements
+            loginBtn.style.display = 'none'; // Keep header login hidden, use landing card
             logoutBtn.style.display = 'none';
             profileBadge.style.display = 'none';
             adminTab.style.display = 'none';
+
+            // Landing Card elements
+            unauthFlow.style.display = 'block';
+            authFlow.style.display = 'none';
             
-            if (activeView === 'admin') {
-                switchView('dashboard');
-            }
+            if (activeView === 'admin') switchView('dashboard');
         }
 
-        // Toggle visibility of Mock login panel if Firebase is disabled
-        if (isFirebaseEnabled()) {
-            mockAuthTip.style.display = 'none';
-        } else {
-            mockAuthTip.style.display = 'block';
-        }
-
-        // Load data on auth change to ensure roles are correct
         await loadData();
         
-        // Refresh active views
         if (activeView === 'dashboard') renderDashboard();
         if (activeView === 'bracket') renderBracket();
         if (activeView === 'leaderboard') renderLeaderboard();
         if (activeView === 'admin') renderAdmin();
     });
 
-    // Initial load and render
     await loadData();
     switchView('dashboard');
 });
