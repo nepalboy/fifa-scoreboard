@@ -991,6 +991,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         const adminTab = document.getElementById('nav-admin');
         const headerNav = document.getElementById('header-nav');
         const rulesCard = document.getElementById('dashboard-rules-card');
+        const header = document.querySelector('header');
+        const heroCard = document.querySelector('.hero-card');
+        const statsGrid = document.querySelector('.dashboard-stats');
+        const splitGrid = document.querySelector('.dashboard-split-grid');
+        const recentMatches = document.getElementById('dashboard-recent-matches');
+        const heroContainer = document.querySelector('.hero-container');
+        const body = document.body;
 
         const unauthFlow = document.getElementById('auth-unauthenticated-flow');
         const authFlow = document.getElementById('auth-authenticated-flow');
@@ -1010,9 +1017,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('welcome-user-name').innerText = currentUser.name;
             document.getElementById('welcome-user-role').innerText = currentUser.role;
 
-            // Show navigation and tournament rules when authenticated
+            // Show full authenticated layout panels
+            if (header) header.style.display = 'block';
             if (headerNav) headerNav.style.display = 'flex';
             if (rulesCard) rulesCard.style.display = 'block';
+            if (heroCard) heroCard.style.display = 'flex';
+            if (statsGrid) statsGrid.style.display = 'grid';
+            if (splitGrid) splitGrid.style.display = 'grid';
+            if (recentMatches) recentMatches.style.display = 'grid';
+            if (heroContainer) heroContainer.classList.remove('login-mode');
+            if (body) body.classList.remove('login-layout');
 
             if (currentUser.role === 'admin') {
                 adminTab.style.display = 'inline-flex';
@@ -1026,9 +1040,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             profileBadge.style.display = 'none';
             adminTab.style.display = 'none';
 
-            // Hide navigation and rules card when unauthenticated
+            // Hide everything except the centered login form on landing page
+            if (header) header.style.display = 'none';
             if (headerNav) headerNav.style.display = 'none';
             if (rulesCard) rulesCard.style.display = 'none';
+            if (heroCard) heroCard.style.display = 'none';
+            if (statsGrid) statsGrid.style.display = 'none';
+            if (splitGrid) splitGrid.style.display = 'none';
+            if (recentMatches) recentMatches.style.display = 'none';
+            if (heroContainer) heroContainer.classList.add('login-mode');
+            if (body) body.classList.add('login-layout');
 
             unauthFlow.style.display = 'block';
             authFlow.style.display = 'none';
