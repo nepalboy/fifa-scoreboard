@@ -152,6 +152,18 @@ function switchView(viewId) {
     if (viewId === 'admin') renderAdmin();
 }
 
+// Helper to update the points listed under Tournament Rules dynamically
+function updateRulesPointsDisplay() {
+    if (!settings || !settings.levelPoints) return;
+    for (let level = 1; level <= 6; level++) {
+        const points = settings.levelPoints[level];
+        const winSpan = document.getElementById(`rules-lvl${level}-win`);
+        const tieSpan = document.getElementById(`rules-lvl${level}-tie`);
+        if (winSpan && points) winSpan.innerText = points.win;
+        if (tieSpan && points) tieSpan.innerText = points.tie;
+    }
+}
+
 // ----------------------------------------------------
 // DATA REFRESH & SYNCRONIZATION
 // ----------------------------------------------------
@@ -165,6 +177,8 @@ async function loadData() {
             await initializeNewBracket(false);
             matches = await getMatches();
         }
+        
+        updateRulesPointsDisplay();
     } catch (e) {
         console.error("Error loading DB data", e);
         showToast("Error connecting to database. Running in offline/cached mode.", "error");
@@ -975,6 +989,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const loginBtn = document.getElementById('btn-login');
         const logoutBtn = document.getElementById('btn-logout');
         const adminTab = document.getElementById('nav-admin');
+        const headerNav = document.getElementById('header-nav');
+        const rulesCard = document.getElementById('dashboard-rules-card');
 
         const unauthFlow = document.getElementById('auth-unauthenticated-flow');
         const authFlow = document.getElementById('auth-authenticated-flow');
@@ -994,6 +1010,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('welcome-user-name').innerText = currentUser.name;
             document.getElementById('welcome-user-role').innerText = currentUser.role;
 
+            // Show navigation and tournament rules when authenticated
+            if (headerNav) headerNav.style.display = 'flex';
+            if (rulesCard) rulesCard.style.display = 'block';
+
             if (currentUser.role === 'admin') {
                 adminTab.style.display = 'inline-flex';
             } else {
@@ -1006,10 +1026,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             profileBadge.style.display = 'none';
             adminTab.style.display = 'none';
 
+            // Hide navigation and rules card when unauthenticated
+            if (headerNav) headerNav.style.display = 'none';
+            if (rulesCard) rulesCard.style.display = 'none';
+
             unauthFlow.style.display = 'block';
             authFlow.style.display = 'none';
             
-            if (activeView === 'admin') switchView('dashboard');
+            // Redirect unauthenticated user to dashboard
+            if (activeView !== 'dashboard') switchView('dashboard');
         }
 
         await loadData();
