@@ -78,48 +78,48 @@
                             <!-- Login Form -->
                             <form id="credentials-login-form">
                                 <div class="auth-form-group">
-                                    <span style="font-size:0.75rem; color:var(--color-text-muted); font-weight:600; display:block; margin-bottom:0.25rem;">EMAIL</span>
+                                    <span style="font-size:0.7rem; color:var(--color-text-muted); font-weight:600; display:block; margin-bottom:0.2rem;">USERNAME OR EMAIL</span>
                                     <div class="auth-input-wrapper">
-                                        <i class="fas fa-envelope auth-input-icon"></i>
-                                        <input type="email" class="auth-input" id="login-email" required placeholder="name@email.com">
+                                        <i class="fas fa-user auth-input-icon"></i>
+                                        <input type="text" class="auth-input" id="login-email" required placeholder="username or email">
                                     </div>
                                 </div>
                                 <div class="auth-form-group">
-                                    <span style="font-size:0.75rem; color:var(--color-text-muted); font-weight:600; display:block; margin-bottom:0.25rem;">PASSWORD</span>
+                                    <span style="font-size:0.7rem; color:var(--color-text-muted); font-weight:600; display:block; margin-bottom:0.2/rem;">PASSWORD</span>
                                     <div class="auth-input-wrapper">
                                         <i class="fas fa-lock auth-input-icon"></i>
                                         <input type="password" class="auth-input" id="login-password" required placeholder="••••••••">
                                     </div>
                                 </div>
-                                <button type="submit" class="btn btn-primary" style="width:100%; margin-top:0.5rem; font-weight:700;">
-                                    <i class="fas fa-sign-in-alt"></i> Sign In to Account
+                                <button type="submit" class="btn btn-primary" style="width:100%; margin-top:0.35rem; font-weight:700; padding: 0.5rem;">
+                                    <i class="fas fa-sign-in-alt"></i> Sign In
                                 </button>
                             </form>
 
                             <!-- Register Form (Hidden initially) -->
                             <form id="credentials-register-form" style="display:none;">
                                 <div class="auth-form-group">
-                                    <span style="font-size:0.75rem; color:var(--color-text-muted); font-weight:600; display:block; margin-bottom:0.25rem;">FULL NAME</span>
+                                    <span style="font-size:0.7rem; color:var(--color-text-muted); font-weight:600; display:block; margin-bottom:0.2rem;">FULL NAME</span>
                                     <div class="auth-input-wrapper">
                                         <i class="fas fa-user auth-input-icon"></i>
                                         <input type="text" class="auth-input" id="reg-fullname" required placeholder="Your Name">
                                     </div>
                                 </div>
                                 <div class="auth-form-group">
-                                    <span style="font-size:0.75rem; color:var(--color-text-muted); font-weight:600; display:block; margin-bottom:0.25rem;">EMAIL</span>
+                                    <span style="font-size:0.7rem; color:var(--color-text-muted); font-weight:600; display:block; margin-bottom:0.2rem;">USERNAME OR EMAIL</span>
                                     <div class="auth-input-wrapper">
                                         <i class="fas fa-envelope auth-input-icon"></i>
-                                        <input type="email" class="auth-input" id="reg-email" required placeholder="name@email.com">
+                                        <input type="text" class="auth-input" id="reg-email" required placeholder="username or email">
                                     </div>
                                 </div>
                                 <div class="auth-form-group">
-                                    <span style="font-size:0.75rem; color:var(--color-text-muted); font-weight:600; display:block; margin-bottom:0.25rem;">PASSWORD</span>
+                                    <span style="font-size:0.7rem; color:var(--color-text-muted); font-weight:600; display:block; margin-bottom:0.2rem;">PASSWORD</span>
                                     <div class="auth-input-wrapper">
                                         <i class="fas fa-lock auth-input-icon"></i>
                                         <input type="password" class="auth-input" id="reg-password" required placeholder="Create Password">
                                     </div>
                                 </div>
-                                <button type="submit" class="btn btn-accent" style="width:100%; margin-top:0.5rem; font-weight:700;">
+                                <button type="submit" class="btn btn-accent" style="width:100%; margin-top:0.35rem; font-weight:700; padding: 0.5rem;">
                                     <i class="fas fa-user-plus"></i> Create Account
                                 </button>
                             </form>
@@ -128,15 +128,9 @@
 
                             <!-- Google Login Button -->
                             <button class="btn btn-google" id="btn-google-login">
-                                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" style="width: 16px; height: 16px;">
-                                Sign In with Google
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" style="width: 14px; height: 14px;">
+                                Continue with Google
                             </button>
-
-                            <!-- Default Admin Hint -->
-                            <div style="background: rgba(255, 183, 0, 0.05); border: 1px dashed rgba(255, 183, 0, 0.2); border-radius: 8px; padding: 0.75rem; margin-top: 1.25rem; font-size: 0.75rem; color: var(--color-secondary); text-align: center;">
-                                <i class="fas fa-info-circle"></i> <strong>Admin Credentials:</strong><br>
-                                Email: <span style="color:#fff; font-family:monospace;">admin@fifa.com</span> | Pass: <span style="color:#fff; font-family:monospace;">admin123</span>
-                            </div>
                         </div>
 
                         <!-- Case B: LOGGED IN (Show Profile Summary) -->
@@ -145,12 +139,12 @@
                             <div class="auth-welcome-name" id="welcome-user-name">-</div>
                             <div class="auth-welcome-role" id="welcome-user-role">-</div>
                             
-                            <p style="font-size:0.85rem; color:var(--color-text-muted); margin-bottom:1.5rem; max-width:260px;">You are currently connected to the tournament database. Proceed to the brackets to log match results!</p>
+                            <p style="font-size:0.8rem; color:var(--color-text-muted); margin-bottom:1rem; max-width:240px;">Connected to the tournament database.</p>
                             
-                            <button class="btn btn-primary" id="btn-dashboard-go-brackets" style="width:100%; margin-bottom:0.75rem;">
+                            <button class="btn btn-primary" id="btn-dashboard-go-brackets" style="width:100%; margin-bottom:0.5rem; padding: 0.5rem;">
                                 <i class="fas fa-sitemap"></i> Enter Brackets
                             </button>
-                            <button class="btn btn-secondary" id="btn-dashboard-logout" style="width:100%;">
+                            <button class="btn btn-secondary" id="btn-dashboard-logout" style="width:100%; padding: 0.5rem;">
                                 <i class="fas fa-sign-out-alt"></i> Logout
                             </button>
                         </div>
@@ -194,6 +188,66 @@
                             <span class="stat-label">Highest Score</span>
                             <span class="stat-value" id="stat-top-score">0 pts</span>
                         </div>
+                    </div>
+                </div>
+
+                <!-- NEW Dashboard split grid for performance metrics -->
+                <div class="dashboard-split-grid">
+                    <!-- Individual Player Score Card -->
+                    <div class="performance-card" id="dashboard-personal-card">
+                        <div class="performance-header">
+                            <div class="performance-title"><i class="fas fa-user-circle"></i> Your Performance</div>
+                            <span class="player-badge-admin" style="display:none;" id="dash-perf-admin-badge">Admin</span>
+                        </div>
+                        
+                        <div id="dash-perf-authenticated" style="display:none;" class="performance-body">
+                            <div class="perf-avatar-wrapper">
+                                <img id="dash-perf-avatar" src="" alt="Avatar" class="perf-avatar">
+                                <span class="perf-badge" id="dash-perf-rank">#1</span>
+                            </div>
+                            <div class="perf-stats-rows">
+                                <div class="perf-stat-item">
+                                    <span class="perf-stat-label">Total Points</span>
+                                    <span class="perf-stat-value gold" id="dash-perf-points">0 PTS</span>
+                                </div>
+                                <div class="perf-stat-item">
+                                    <span class="perf-stat-label">Wins Logged</span>
+                                    <span class="perf-stat-value primary" id="dash-perf-wins">0</span>
+                                </div>
+                                <div class="perf-stat-item">
+                                    <span class="perf-stat-label">Ties Logged</span>
+                                    <span class="perf-stat-value" id="dash-perf-ties">0</span>
+                                </div>
+                                <div class="perf-stat-item">
+                                    <span class="perf-stat-label">Matches Logged</span>
+                                    <span class="perf-stat-value" id="dash-perf-matches">0</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="dash-perf-unauthenticated" style="text-align:center; padding:1.5rem; color:var(--color-text-muted);">
+                            <i class="fas fa-lock" style="font-size:1.5rem; margin-bottom:0.5rem; display:block;"></i>
+                            Sign in to track your personal competitor metrics.
+                        </div>
+                    </div>
+
+                    <!-- Global Leaderboard Summary -->
+                    <div class="settings-card" style="margin-bottom:0;">
+                        <div class="settings-card-title" style="margin-bottom:0.5rem; padding-bottom:0.4rem;">
+                            <i class="fas fa-trophy" style="color: var(--color-secondary);"></i> All Players Standings
+                        </div>
+                        <table class="leaderboard-table" style="font-size: 0.85rem;">
+                            <thead>
+                                <tr>
+                                    <th style="padding: 0.4rem 0.75rem;">Rank</th>
+                                    <th style="padding: 0.4rem 0.75rem;">Competitor</th>
+                                    <th style="padding: 0.4rem 0.75rem; text-align:right;">Score</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashboard-leaderboard-list">
+                                <!-- Populated dynamically by JS -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
@@ -509,18 +563,13 @@
                 <h4 style="font-size:0.8rem; font-weight:700; text-transform:uppercase; color:var(--color-secondary); margin-bottom:0.75rem;">Mock Authentication</h4>
                 <p style="font-size:0.75rem; color:var(--color-text-muted); margin-bottom:0.75rem;">Quick simulate logins in Mock Mode:</p>
                 <button class="mock-user-btn" id="mock-login-admin">
-                    <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=30&h=30&q=80" alt="" style="width:20px; height:20px; border-radius:50%;">
+                    <img src="https://api.dicebear.com/7.x/adventurer/svg?seed=Admin" alt="" style="width:20px; height:20px; border-radius:50%;">
                     <span>FIFA Admin</span>
                     <span class="badge-round admin">Admin</span>
                 </button>
                 <button class="mock-user-btn" id="mock-login-player1">
-                    <img src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=30&h=30&q=80" alt="" style="width:20px; height:20px; border-radius:50%;">
-                    <span>Marcus Rashford</span>
-                    <span class="badge-round player">Player</span>
-                </button>
-                <button class="mock-user-btn" id="mock-login-player2">
-                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=30&h=30&q=80" alt="" style="width:20px; height:20px; border-radius:50%;">
-                    <span>Bukayo Saka</span>
+                    <img src="https://api.dicebear.com/7.x/adventurer/svg?seed=Test" alt="" style="width:20px; height:20px; border-radius:50%;">
+                    <span>Test Player</span>
                     <span class="badge-round player">Player</span>
                 </button>
             </div>
