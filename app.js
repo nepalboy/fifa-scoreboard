@@ -16,7 +16,8 @@ import {
     saveMatch,
     resetTournament,
     simulateMockLogin,
-    simulateMockRegister
+    simulateMockRegister,
+    updateCurrentUserPassword
 } from './firebase-config.js';
 
 // ----------------------------------------------------
@@ -191,25 +192,69 @@ async function initializeNewBracket(resetScores = false) {
     for (let i = 1; i <= 32; i++) {
         const teamAIndex = (i - 1) * 2;
         const teamBIndex = teamAIndex + 1;
+        
+        let completed = false;
+        let homeScore = null;
+        let awayScore = null;
+        let outcome = null;
+        let reporterId = null;
+        
+        // 2026 World Cup Real Completed Games mappings
+        if (i === 5) { // Italy vs Germany
+            completed = true; homeScore = 1; awayScore = 7; outcome = 'away'; reporterId = 'admin';
+        } else if (i === 6) { // Belgium vs Uruguay
+            completed = true; homeScore = 1; awayScore = 2; outcome = 'away'; reporterId = 'admin';
+        } else if (i === 7) { // Mexico vs USA
+            completed = true; homeScore = 1; awayScore = 4; outcome = 'away'; reporterId = 'admin';
+        } else if (i === 8) { // Senegal vs Switzerland
+            completed = true; homeScore = 1; awayScore = 2; outcome = 'away'; reporterId = 'admin';
+        } else if (i === 9) { // Japan vs Denmark
+            completed = true; homeScore = 0; awayScore = 1; outcome = 'away'; reporterId = 'admin';
+        } else if (i === 10) { // South Korea vs Poland
+            completed = true; homeScore = 2; awayScore = 1; outcome = 'home'; reporterId = 'admin';
+        } else if (i === 19) { // Costa Rica vs Wales
+            completed = true; homeScore = 2; awayScore = 3; outcome = 'away'; reporterId = 'admin';
+        } else if (i === 20) { // Austria vs Turkey
+            completed = true; homeScore = 0; awayScore = 2; outcome = 'away'; reporterId = 'admin';
+        }
+
         initialMatches.push({
             id: i,
             level: 1,
             homeTeam: TEAMS_64[teamAIndex],
             awayTeam: TEAMS_64[teamBIndex],
-            homeScore: null,
-            awayScore: null,
-            outcome: null,
-            completed: false,
-            reporterId: null
+            homeScore: homeScore,
+            awayScore: awayScore,
+            outcome: outcome,
+            completed: completed,
+            reporterId: reporterId
         });
     }
 
     for (let i = 33; i <= 63; i++) {
+        let homeTeam = null;
+        let awayTeam = null;
+        
+        // Propagate winners of the pre-completed matches
+        if (i === 35) {
+            homeTeam = TEAMS_64[9]; // Germany
+            awayTeam = TEAMS_64[11]; // Uruguay
+        } else if (i === 36) {
+            homeTeam = TEAMS_64[13]; // USA
+            awayTeam = TEAMS_64[15]; // Switzerland
+        } else if (i === 37) {
+            homeTeam = TEAMS_64[17]; // Denmark
+            awayTeam = TEAMS_64[18]; // South Korea
+        } else if (i === 42) {
+            homeTeam = TEAMS_64[37]; // Wales
+            awayTeam = TEAMS_64[39]; // Turkey
+        }
+
         initialMatches.push({
             id: i,
             level: getMatchLevel(i),
-            homeTeam: null,
-            awayTeam: null,
+            homeTeam: homeTeam,
+            awayTeam: awayTeam,
             homeScore: null,
             awayScore: null,
             outcome: null,
@@ -403,14 +448,22 @@ function renderBracket() {
             const awayScoreText = m.awayScore !== null ? m.awayScore : '-';
 
             const isActiveMatch = m.homeTeam && m.awayTeam;
+            const isLockedForUser = isCompleted && (!currentUser || currentUser.role !== 'admin');
+
+            const actionHint = isActiveMatch ? (
+                isLockedForUser ? 
+                '<div class="match-action-hint locked"><i class="fas fa-lock"></i> Match Locked</div>' : 
+                '<div class="match-action-hint"><i class="fas fa-edit"></i> Click to Enter Score</div>'
+            ) : '';
 
             matchesHtml += `
-                <div class="match-card ${isCompleted ? 'completed' : ''} ${isActiveMatch ? 'active-match' : ''}" data-match-id="${m.id}">
+                <div class="match-card ${isCompleted ? 'completed' : ''} ${isActiveMatch ? 'active-match' : ''} ${isLockedForUser ? 'locked' : ''}" data-match-id="${m.id}">
                     <div class="match-info-top">
                         <span class="match-id">M${m.id}</span>
                         <span class="match-status ${isCompleted ? 'done' : (isActiveMatch ? 'live' : '')}">
                             ${isCompleted ? 'Full Time' : (isActiveMatch ? 'Ready' : 'Waiting')}
                         </span>
+                        ${isLockedForUser ? '<span class="lock-badge"><i class="fas fa-lock"></i> Locked</span>' : ''}
                     </div>
                     <div class="match-team ${homeWinner ? 'winner' : ''}">
                         <div class="match-team-name">${homeFlag} ${homeName}</div>
@@ -420,7 +473,7 @@ function renderBracket() {
                         <div class="match-team-name">${awayFlag} ${awayName}</div>
                         <div class="match-team-score">${awayScoreText}</div>
                     </div>
-                    ${isActiveMatch ? '<div class="match-action-hint"><i class="fas fa-edit"></i> Click to Enter Score</div>' : ''}
+                    ${actionHint}
                 </div>
             `;
         });
@@ -443,6 +496,10 @@ function renderBracket() {
             const matchId = parseInt(card.getAttribute('data-match-id'));
             const match = matches.find(m => m.id === matchId);
             if (match && match.homeTeam && match.awayTeam) {
+                if (match.completed && (!currentUser || currentUser.role !== 'admin')) {
+                    showToast("This match is completed and locked.", "warning");
+                    return;
+                }
                 openMatchModal(match);
             }
         });
@@ -527,11 +584,16 @@ function renderAdmin() {
                 </span>
             </td>
             <td>
-                ${currentUser && currentUser.id !== player.id ? `
-                    <button class="btn btn-secondary promote-btn" data-user-id="${player.id}" style="padding:0.25rem 0.6rem; font-size:0.75rem;">
-                        ${isAdmin ? 'Demote to Player' : 'Promote to Admin'}
+                <div style="display:flex; gap:0.5rem; align-items:center;">
+                    <button class="btn btn-secondary profile-btn" data-user-id="${player.id}" style="padding:0.25rem 0.6rem; font-size:0.75rem;">
+                        <i class="fas fa-user"></i> Profile
                     </button>
-                ` : '<span style="font-size:0.75rem; color:var(--color-text-muted);">Locked (Current User)</span>'}
+                    ${currentUser && currentUser.id !== player.id ? `
+                        <button class="btn btn-secondary promote-btn" data-user-id="${player.id}" style="padding:0.25rem 0.6rem; font-size:0.75rem;">
+                            ${isAdmin ? 'Demote' : 'Promote'}
+                        </button>
+                    ` : '<span style="font-size:0.75rem; color:var(--color-text-muted);">Locked</span>'}
+                </div>
             </td>
         `;
         usersTable.appendChild(tr);
@@ -546,6 +608,59 @@ function renderAdmin() {
                 await savePlayer(targetUser);
                 showToast(`Role updated for ${targetUser.name}!`, "success");
                 loadData().then(renderAdmin);
+            }
+        });
+    });
+
+    document.querySelectorAll('.profile-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const userId = btn.getAttribute('data-user-id');
+            const player = players.find(p => p.id === userId);
+            if (player) {
+                // Populate elements in `#admin-user-modal`
+                document.getElementById('admin-user-modal-avatar').src = player.photoURL;
+                document.getElementById('admin-user-modal-name').innerText = player.name;
+                document.getElementById('admin-user-modal-email').innerText = player.email;
+                document.getElementById('admin-user-modal-points').innerText = `${player.points} PTS`;
+                
+                const roleBadge = document.getElementById('admin-user-modal-role');
+                roleBadge.innerText = player.role;
+                if (player.role === 'admin') {
+                    roleBadge.style.background = 'rgba(255, 183, 0, 0.15)';
+                    roleBadge.style.color = 'var(--color-secondary)';
+                } else {
+                    roleBadge.style.background = 'rgba(255, 255, 255, 0.05)';
+                    roleBadge.style.color = 'var(--color-text-muted)';
+                }
+
+                // Render list of matches completed by this user
+                const reporterMatches = matches.filter(m => m.completed && m.reporterId === player.id);
+                const matchesListDiv = document.getElementById('admin-user-modal-matches-list');
+                matchesListDiv.innerHTML = '';
+
+                if (reporterMatches.length === 0) {
+                    matchesListDiv.innerHTML = '<div style="font-size:0.8rem; color:var(--color-text-muted); text-align:center; padding:1.5rem 0;">No matches completed yet.</div>';
+                } else {
+                    reporterMatches.forEach(m => {
+                        const levelConfig = ROUND_DETAILS[m.level];
+                        const ptsConfig = settings.levelPoints[m.level];
+                        const ptsEarned = m.outcome === 'tie' ? ptsConfig.tie : ptsConfig.win;
+
+                        const matchItem = document.createElement('div');
+                        matchItem.className = 'admin-modal-match-item';
+                        matchItem.innerHTML = `
+                            <div class="admin-modal-match-details">
+                                <span class="admin-modal-match-teams">${m.homeTeam.name} ${m.homeScore} - ${m.awayScore} ${m.awayTeam.name}</span>
+                                <span class="admin-modal-match-meta">Match M${m.id} | ${levelConfig.name}</span>
+                            </div>
+                            <span class="admin-modal-match-points">+${ptsEarned} PTS</span>
+                        `;
+                        matchesListDiv.appendChild(matchItem);
+                    });
+                }
+
+                // Show the modal
+                document.getElementById('admin-user-modal').classList.add('active');
             }
         });
     });
@@ -739,6 +854,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('modal-cancel').onclick = closeMatchModal;
     document.getElementById('modal-close-btn').onclick = closeMatchModal;
     document.getElementById('modal-submit').onclick = submitMatchOutcome;
+
+    // User Profile Modal close handlers
+    const closeUserModal = () => {
+        document.getElementById('admin-user-modal').classList.remove('active');
+    };
+    document.getElementById('admin-user-modal-close').onclick = closeUserModal;
+    document.getElementById('admin-user-modal-ok').onclick = closeUserModal;
 
     // ----------------------------------------------------
     // LANDING PAGE AUTH CARD EVENT LISTENERS
@@ -967,6 +1089,36 @@ document.addEventListener('DOMContentLoaded', async () => {
             renderBracket();
             renderDashboard();
             renderLeaderboard();
+        }
+    };
+
+    // Change Admin Password handler
+    document.getElementById('admin-password-form').onsubmit = async (e) => {
+        e.preventDefault();
+        if (!currentUser || currentUser.role !== 'admin') {
+            showToast("Admin access required.", "error");
+            return;
+        }
+
+        const newPass = document.getElementById('admin-new-password').value;
+        const confirmPass = document.getElementById('admin-confirm-password').value;
+
+        if (newPass.length < 6) {
+            showToast("Password must be at least 6 characters long.", "error");
+            return;
+        }
+
+        if (newPass !== confirmPass) {
+            showToast("Passwords do not match.", "error");
+            return;
+        }
+
+        try {
+            await updateCurrentUserPassword(newPass);
+            showToast("Password updated successfully!", "success");
+            document.getElementById('admin-password-form').reset();
+        } catch (err) {
+            showToast(err.message || "Failed to update password.", "error");
         }
     };
 
