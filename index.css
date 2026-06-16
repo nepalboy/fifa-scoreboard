@@ -1421,3 +1421,82 @@ body.login-layout {
     width: 100%;
     animation: fadeIn 0.5s ease-out;
 }
+
+/* User Profile Modal Match List Styling */
+#admin-user-modal-matches-list::-webkit-scrollbar {
+    width: 6px;
+}
+#admin-user-modal-matches-list::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 4px;
+}
+#admin-user-modal-matches-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+}
+#admin-user-modal-matches-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.admin-modal-match-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color);
+    padding: 0.6rem 0.8rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    transition: var(--transition-fast);
+    margin-bottom: 0.5rem;
+}
+
+.admin-modal-match-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.admin-modal-match-teams {
+    font-weight: 600;
+    color: #fff;
+}
+
+.admin-modal-match-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.admin-modal-match-meta {
+    font-size: 0.7rem;
+    color: var(--color-text-muted);
+}
+
+.admin-modal-match-points {
+    font-weight: 700;
+    color: var(--color-secondary);
+}
+
+/* Match card locked indicator */
+.match-card.locked {
+    cursor: not-allowed;
+    opacity: 0.85;
+}
+
+.match-card.locked:hover {
+    transform: none;
+    border-color: var(--border-color);
+    background: var(--bg-card);
+}
+
+.lock-badge {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    font-size: 0.65rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-weight: 700;
+}
